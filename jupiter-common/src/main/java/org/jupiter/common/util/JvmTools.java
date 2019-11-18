@@ -29,20 +29,24 @@ import com.sun.management.HotSpotDiagnosticMXBean;
  * Jupiter
  * org.jupiter.common.util
  *
+ * jvm级别的工具类
  * @author jiachun.fjc
  */
 public final class JvmTools {
 
     /**
      * Returns java stack traces of java threads for the current java process.
+     * 通过线程对象来获取当前栈轨迹信息
      */
     public static List<String> jStack() throws Exception {
         List<String> stackList = new LinkedList<>();
+        // 获取当前所有线程的栈轨迹
         Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> entry : allStackTraces.entrySet()) {
             Thread thread = entry.getKey();
             StackTraceElement[] stackTraces = entry.getValue();
 
+            // 输出当前线程信息
             stackList.add(
                     String.format(
                             "\"%s\" tid=%s isDaemon=%s priority=%s" + JConstants.NEWLINE,
@@ -55,6 +59,7 @@ public final class JvmTools {
 
             stackList.add("java.lang.Thread.State: " + thread.getState() + JConstants.NEWLINE);
 
+            // 追加栈轨迹信息
             if (stackTraces != null) {
                 for (StackTraceElement s : stackTraces) {
                     stackList.add("    " + s.toString() + JConstants.NEWLINE);
@@ -66,9 +71,12 @@ public final class JvmTools {
 
     /**
      * Returns memory usage for the current java process.
+     * 获取当前内存使用情况
      */
     public static List<String> memoryUsage() throws Exception {
+        // 获取当前堆内存使用情况
         MemoryUsage heapMemoryUsage = MXBeanHolder.memoryMxBean.getHeapMemoryUsage();
+        // 非堆内存使用情况
         MemoryUsage nonHeapMemoryUsage = MXBeanHolder.memoryMxBean.getNonHeapMemoryUsage();
 
         List<String> memoryUsageList = new LinkedList<>();
@@ -81,6 +89,7 @@ public final class JvmTools {
 
     /**
      * Returns the heap memory used for the current java process.
+     * 获取内存使用率
      */
     public static double memoryUsed() throws Exception {
         MemoryUsage heapMemoryUsage = MXBeanHolder.memoryMxBean.getHeapMemoryUsage();

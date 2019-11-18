@@ -36,7 +36,7 @@ import static org.jupiter.common.util.Requires.requireNotNull;
  *
  * Jupiter
  * org.jupiter.common.concurrent
- *
+ * 名字亲和的线程工厂  TODO 该类明天看
  * @author jiachun.fjc
  */
 public class AffinityNamedThreadFactory implements ThreadFactory {
@@ -49,11 +49,29 @@ public class AffinityNamedThreadFactory implements ThreadFactory {
                 "Class[" + AffinityNamedThreadFactory.class.getName() + "] must rely on SL4J");
     }
 
+    /**
+     * 该线程工厂的id
+     */
     private final AtomicInteger id = new AtomicInteger();
+    /**
+     * 工作线程名前缀
+     */
     private final String name;
+    /**
+     * 生成的线程是否作为守护线程
+     */
     private final boolean daemon;
+    /**
+     * 线程对应的优先级
+     */
     private final int priority;
+    /**
+     * 该线程所在的线程组
+     */
     private final ThreadGroup group;
+    /**
+     * 亲和政策
+     */
     private final AffinityStrategy[] strategies;
     private AffinityLock lastAffinityLock = null;
 

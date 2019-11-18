@@ -45,7 +45,6 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
 /**
- * 可选择的等待策略, 越往下越极端:
  *
  * The default wait strategy used by the Disruptor is the BlockingWaitStrategy.
  *
@@ -85,15 +84,30 @@ import com.lmax.disruptor.dsl.ProducerType;
  */
 public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
 
+    /**
+     * 使用MessageEvent 去填充环形缓冲区
+     */
     private static final EventFactory<MessageEvent<Runnable>> eventFactory = MessageEvent::new;
 
     private final Disruptor<MessageEvent<Runnable>> disruptor;
+    /**
+     * 储存用的线程池对象
+     */
     private final ExecutorService reserveExecutor;
 
     public TaskDispatcher(int numWorkers, ThreadFactory threadFactory) {
         this(numWorkers, threadFactory, BUFFER_SIZE, 0, WaitStrategyType.BLOCKING_WAIT, null);
     }
 
+    /**
+     * 初始化 disruptor 以及 线程池
+     * @param numWorkers
+     * @param threadFactory
+     * @param bufSize
+     * @param numReserveWorkers
+     * @param waitStrategyType
+     * @param dumpPrefixName
+     */
     public TaskDispatcher(int numWorkers,
                           ThreadFactory threadFactory,
                           int bufSize,
@@ -106,11 +120,13 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
             bufSize = Pow2.roundToPowerOfTwo(bufSize);
         }
 
+        // 如果设置了保存工作线程的话
         if (numReserveWorkers > 0) {
             String name = "reserve.processor";
 
             RejectedExecutionHandler handler;
             if (dumpPrefixName == null) {
+                // 默认采用拒绝策略 如果设置了转储文件名 那么在拒绝同时会存储当前jvm 状态信息
                 handler = new RejectedTaskPolicyWithReport(name);
             } else {
                 handler = new RejectedTaskPolicyWithReport(name, dumpPrefixName);
@@ -121,13 +137,14 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
                     numReserveWorkers,
                     60L,
                     TimeUnit.SECONDS,
-                    new SynchronousQueue<>(),
+                    new SynchronousQueue<>(), // 这里使用同步队列
                     new NamedThreadFactory(name),
                     handler);
         } else {
             reserveExecutor = null;
         }
 
+        // 根据当前策略选择不同的 disruptor阻塞策略
         WaitStrategy waitStrategy;
         switch (waitStrategyType) {
             case BLOCKING_WAIT:
@@ -161,13 +178,17 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
         if (threadFactory == null) {
             threadFactory = new NamedThreadFactory("disruptor.processor");
         }
+        // 这里将netty的优化线程组合到 disruptor 进一步提高性能
+        // TODO 明天复习下 disruptor 是怎么使用线程工厂的
         Disruptor<MessageEvent<Runnable>> dr =
                 new Disruptor<>(eventFactory, bufSize, threadFactory, ProducerType.MULTI, waitStrategy);
-        dr.setDefaultExceptionHandler(new LoggingExceptionHandler());
+        dr.setDefaultExceptionHandler(new LoggingExceptionHandler());  // 默认的异常处理器就是打印日志
         numWorkers = Math.min(Math.abs(numWorkers), MAX_NUM_WORKERS);
+        // 如果只有一个消费者 生成单个handler
         if (numWorkers == 1) {
             dr.handleEventsWith(new TaskHandler());
         } else {
+            // 生成一个消费者组
             TaskHandler[] handlers = new TaskHandler[numWorkers];
             for (int i = 0; i < numWorkers; i++) {
                 handlers[i] = new TaskHandler();
@@ -179,10 +200,16 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
         disruptor = dr;
     }
 
+    /**
+     * 该请求分发处理器对象 处理传入的 message
+     * @param message
+     * @return
+     */
     @Override
     public boolean dispatch(Runnable message) {
         RingBuffer<MessageEvent<Runnable>> ringBuffer = disruptor.getRingBuffer();
         try {
+            // 这是一种老旧的写法 吧 实际上直接通过 transfer设置任务到 ringBuffer就可以
             long sequence = ringBuffer.tryNext();
             try {
                 MessageEvent<Runnable> event = ringBuffer.get(sequence);
@@ -197,10 +224,15 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
         }
     }
 
+    /**
+     * 该对象执行 runnable 时 首先会将任务设置到 disruptor中  如果因为消费者阻塞 生产者长时间没办法写入任务的话(可能性很小)
+     * 那么就使用备选的线程池
+     * @param message
+     */
     @Override
     public void execute(Runnable message) {
         if (!dispatch(message)) {
-            // 备选线程池
+            // 备选线程池  当备选线程池也处理不完任务时才触发拒绝策略
             if (reserveExecutor != null) {
                 reserveExecutor.execute(message);
             } else {

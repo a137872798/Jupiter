@@ -414,6 +414,9 @@ public final class UnsafeUtil {
         return unsafe;
     }
 
+    /**
+     * 包装unsafe 对象
+     */
     public static class UnsafeAccessor {
 
         private final sun.misc.Unsafe unsafe;

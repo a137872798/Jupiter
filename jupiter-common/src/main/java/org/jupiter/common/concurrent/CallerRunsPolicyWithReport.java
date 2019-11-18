@@ -22,7 +22,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  *
  * jupiter
  * org.jupiter.common.concurrent
- *
+ * 如果队列满了 就用调用者自身去执行任务
  * @author jiachun.fjc
  */
 public class CallerRunsPolicyWithReport extends AbstractRejectedExecutionHandler {
@@ -41,6 +41,7 @@ public class CallerRunsPolicyWithReport extends AbstractRejectedExecutionHandler
 
         dumpJvmInfoIfNeeded();
 
+        // 使用当前线程执行任务
         if (!e.isShutdown()) {
             r.run();
         }

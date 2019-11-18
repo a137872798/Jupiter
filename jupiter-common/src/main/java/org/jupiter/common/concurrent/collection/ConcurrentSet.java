@@ -25,7 +25,7 @@ import org.jupiter.common.util.Maps;
 /**
  * jupiter
  * org.jupiter.common.concurrent
- *
+ * 该对象基本方法委托给内部的 ConcurrentMap
  * @author jiachun.fjc
  */
 public final class ConcurrentSet<E> extends AbstractSet<E> implements Serializable {

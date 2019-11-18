@@ -23,10 +23,14 @@ import org.jupiter.common.util.internal.UnsafeUtil;
  * jupiter
  * org.jupiter.common.util
  *
+ * 异常工具类
  * @author jiachun.fjc
  */
 public final class ThrowUtil {
 
+    /**
+     * 原子更新 异常字段
+     */
     private static final ReferenceFieldUpdater<Throwable, Throwable> causeUpdater =
             Updaters.newReferenceFieldUpdater(Throwable.class, "cause");
 
@@ -35,8 +39,10 @@ public final class ThrowUtil {
      */
     public static void throwException(Throwable t) {
         if (UnsafeUtil.hasUnsafe()) {
+            // 可以直接通过unsafe 抛出异常(有 sun 实现)
             UnsafeUtil.getUnsafeAccessor().throwException(t);
         } else {
+            // throw t
             ThrowUtil.throwException0(t);
         }
     }
@@ -63,11 +69,15 @@ public final class ThrowUtil {
     public static <T extends Throwable> T cutCause(T cause) {
         Throwable rootCause = cause;
         while (rootCause.getCause() != null) {
+            // 获取源异常
             rootCause = rootCause.getCause();
         }
 
+        // 代表本异常对象 内有包装异常
         if (rootCause != cause) {
+            // 替换栈轨迹
             cause.setStackTrace(rootCause.getStackTrace());
+            // 将内部的cause 设置成自己  有什么意义???
             causeUpdater.set(cause, cause);
         }
         return cause;

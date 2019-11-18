@@ -19,6 +19,7 @@ package org.jupiter.common.concurrent;
  * jupiter
  * org.jupiter.common.concurrent
  *
+ * 实现该接口的类在使用拒绝策略作为 线程池策略时 会触发
  * @author jiachun.fjc
  */
 public interface RejectedRunnable extends Runnable {

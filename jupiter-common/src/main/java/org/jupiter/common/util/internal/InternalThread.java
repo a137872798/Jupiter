@@ -19,10 +19,14 @@ package org.jupiter.common.util.internal;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * 同netty 的优化线程
  * @author jiachun.fjc
  */
 public class InternalThread extends Thread {
 
+    /**
+     * 内部基于数组实现的本地线程变量
+     */
     private InternalThreadLocalMap threadLocalMap;
 
     public InternalThread() {}

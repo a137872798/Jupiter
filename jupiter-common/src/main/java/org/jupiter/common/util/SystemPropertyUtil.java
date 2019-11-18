@@ -27,7 +27,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  *
  * jupiter
  * org.jupiter.common.util
- *
+ * 获取系统变量工具
  * @author jiachun.fjc
  */
 public final class SystemPropertyUtil {

@@ -49,7 +49,7 @@ package org.jupiter.common.concurrent.disruptor;
  *
  * jupiter
  * org.jupiter.common.concurrent.disruptor
- *
+ * 这些阻塞策略实际上是 Disruptor的
  * @author jiachun.fjc
  */
 public enum WaitStrategyType {

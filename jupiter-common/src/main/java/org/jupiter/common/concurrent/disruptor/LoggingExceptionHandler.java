@@ -25,6 +25,7 @@ import com.lmax.disruptor.ExceptionHandler;
  * Jupiter
  * org.jupiter.common.concurrent.disruptor
  *
+ * 该对象实现了 disruptor的异常处理器  只是打印了日志
  * @author jiachun.fjc
  */
 public class LoggingExceptionHandler implements ExceptionHandler<Object> {

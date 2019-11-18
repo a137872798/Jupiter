@@ -18,7 +18,7 @@ package org.jupiter.common.concurrent.disruptor;
 /**
  * jupiter
  * org.jupiter.common.concurrent.disruptor
- *
+ * 消息事件 用于 disruptor 因为该框架需要实体承载事件
  * @author jiachun.fjc
  */
 public class MessageEvent<T> {

@@ -6,6 +6,7 @@ import java.util.Map;
 /**
  * Interface for a primitive map that uses {@code int}s as keys.
  *
+ * 类似于 ByteObjectMap
  * @param <V> the value type stored in the map.
  */
 public interface IntObjectMap<V> extends Map<Integer, V> {

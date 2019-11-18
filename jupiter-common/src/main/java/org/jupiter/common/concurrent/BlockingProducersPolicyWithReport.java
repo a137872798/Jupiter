@@ -22,7 +22,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  *
  * jupiter
  * org.jupiter.common.concurrent
- *
+ * 基于阻塞生产者的方式来执行任务， 确保队列中的任务能被消费者消耗而非丢弃
  * @author jiachun.fjc
  */
 public class BlockingProducersPolicyWithReport extends AbstractRejectedExecutionHandler {
@@ -31,18 +31,30 @@ public class BlockingProducersPolicyWithReport extends AbstractRejectedExecution
         super(threadPoolName, false, "");
     }
 
+    /**
+     * 强制指定转储地址
+     * @param threadPoolName
+     * @param dumpPrefixName
+     */
     public BlockingProducersPolicyWithReport(String threadPoolName, String dumpPrefixName) {
         super(threadPoolName, true, dumpPrefixName);
     }
 
+    /**
+     * 当线程池的阻塞队列无法存放新任务时
+     * @param r
+     * @param e
+     */
     @Override
     public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
         logger.error("Thread pool [{}] is exhausted! {}.", threadPoolName, e.toString());
 
+        // 如果设置了要转储 记录当jvm 信息
         dumpJvmInfoIfNeeded();
 
         if (!e.isShutdown()) {
             try {
+                // 此时继续往阻塞队列中添加任务的结果就是阻塞直到队列中的任务被消耗
                 e.getQueue().put(r);
             } catch (InterruptedException ignored) { /* should not be interrupted */ }
         }

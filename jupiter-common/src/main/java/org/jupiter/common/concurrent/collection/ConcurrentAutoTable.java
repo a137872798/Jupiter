@@ -39,6 +39,9 @@ public class ConcurrentAutoTable implements Serializable {
 
     private static final long serialVersionUID = -754466836461919739L;
 
+    /**
+     * 获取unsafe 对象
+     */
     private static Unsafe unsafe = UnsafeUtil.getUnsafeAccessor().getUnsafe();
 
     // --- public interface ---
@@ -71,6 +74,7 @@ public class ConcurrentAutoTable implements Serializable {
     /**
      * Atomically set the sum of the striped counters to specified value.
      * Rather more expensive than a simple store, in order to remain atomic.
+     * 这里生成一个空的cat 对象并替换了 _cat 字段
      */
     @SuppressWarnings("StatementWithEmptyBody")
     public void set(long x) {
@@ -83,6 +87,7 @@ public class ConcurrentAutoTable implements Serializable {
      * Current value of the counter.  Since other threads are updating furiously
      * the value is only approximate, but it includes all counts made by the
      * current thread.  Requires a pass over the internally striped counters.
+     * 计算所有元素总和
      */
     public long get() {
         return _cat.sum();
@@ -105,6 +110,7 @@ public class ConcurrentAutoTable implements Serializable {
     /**
      * A cheaper {@link #get}.  Updated only once/millisecond, but as fast as a
      * simple load instruction when not updating.
+     * 获取一个预估值
      */
     public long estimate_get() {
         return _cat.estimate_sum();
@@ -136,6 +142,8 @@ public class ConcurrentAutoTable implements Serializable {
     // Only add 'x' to some slot in table, hinted at by 'hash'.  The sum can
     // overflow.  Value is CAS'd so no counts are lost.  The CAS is retried until
     // it succeeds.  Returned value is the old value.
+    // 不同的线程会生成不同的hash值 当竞争很激烈时 也就是有很多线程开始往里面添加值，这样就容易hash冲突(因为这里的hash是跟线程挂钩的，线程多了才容易冲突)
+    // 这时 竞争达到一定激烈程度导致CAS 经常失败 ， 就会创建一个更大的数组，便于更激烈的竞争。同时计算sum时会连带之前槽中的数据
     private long add_if(long x) {
         return _cat.add_if(x, hash(), this);
     }
@@ -145,6 +153,12 @@ public class ConcurrentAutoTable implements Serializable {
     private static final AtomicReferenceFieldUpdater<ConcurrentAutoTable, CAT> _catUpdater =
             AtomicReferenceFieldUpdater.newUpdater(ConcurrentAutoTable.class, CAT.class, "_cat");
 
+    /**
+     * cas 方式更新cat
+     * @param oldcat
+     * @param newcat
+     * @return
+     */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean CAS_cat(CAT oldcat, CAT newcat) {
         return _catUpdater.compareAndSet(this, oldcat, newcat);
@@ -160,15 +174,25 @@ public class ConcurrentAutoTable implements Serializable {
     // --- CAT -----------------------------------------------------------------
     private static class CAT implements Serializable {
 
-        // Unsafe crud: get a function which will CAS arrays
+        // Unsafe crud: get a function which will CAS arrays  获取long[]的 基础偏移量
         private static final int _Lbase = unsafe.arrayBaseOffset(long[].class);
+        // 获取每个元素的偏移量
         private static final int _Lscale = unsafe.arrayIndexScale(long[].class);
 
+        // 通过 unsafe对象来获取偏移量
         private static long rawIndex(long[] ary, int i) {
             assert i >= 0 && i < ary.length;
             return _Lbase + ((long) i * _Lscale);
         }
 
+        /**
+         * CAS 更新数组中某个值
+         * @param A
+         * @param idx
+         * @param old
+         * @param nnn
+         * @return
+         */
         private static boolean CAS(long[] A, int idx, long old, long nnn) {
             return unsafe.compareAndSwapLong(A, rawIndex(A, idx), old, nnn);
         }
@@ -177,10 +201,22 @@ public class ConcurrentAutoTable implements Serializable {
         //static private final AtomicLongFieldUpdater<CAT> _resizerUpdater =
         //  AtomicLongFieldUpdater.newUpdater(CAT.class, "_resizers");
 
+        /**
+         * CAT 是一个链表结构
+         */
         private final CAT _next;
+        /**
+         * 模糊缓存总数
+         */
         private volatile long _fuzzy_sum_cache;
+        /**
+         * 模糊时间
+         */
         private volatile long _fuzzy_time;
         private static final int MAX_SPIN = 1;
+        /**
+         * 数组大小一开始就是固定的
+         */
         private final long[] _t;     // Power-of-2 array of longs
 
         CAT(CAT next, int sz, long init) {
@@ -195,20 +231,27 @@ public class ConcurrentAutoTable implements Serializable {
         @SuppressWarnings("StatementWithEmptyBody")
         public long add_if(long x, int hash, ConcurrentAutoTable master) {
             final long[] t = _t;
+            // 找到数组下标
             final int idx = hash & (t.length - 1);
             // Peel loop; try once fast
             long old = t[idx];
+            // 更新指定值
             final boolean ok = CAS(t, idx, old, old + x);
+            // 成功情况下返回旧的数据
             if (ok) return old;      // Got it
-            // Try harder
+            // Try harder  失败准备进行自旋
             int cnt = 0;
             while (true) {
                 old = t[idx];
                 if (CAS(t, idx, old, old + x)) break; // Got it!
                 cnt++;
             }
+            // 第二次就成功的情况下 返回old
             if (cnt < MAX_SPIN) return old; // Allowable spin loop count
+            // 数组过大的情况也返回old
             if (t.length >= 1024 * 1024) return old; // too big already
+
+            // 以下情况代表竞争很激烈
 
             // Too much contention; double array size in an effort to reduce contention
             //long r = _resizers;
@@ -216,6 +259,7 @@ public class ConcurrentAutoTable implements Serializable {
             //while( !_resizerUpdater.compareAndSet(this,r,r+newbytes) )
             //  r = _resizers;
             //r += newbytes;
+            // _cat 已经被替换的情况下 直接返回old
             if (master._cat != this) return old; // Already doubled, don't bother
             //if( (r>>17) != 0 ) {      // Already too much allocation attempts?
             //  // We could use a wait with timeout, so we'll wakeup as soon as the new
@@ -226,10 +270,12 @@ public class ConcurrentAutoTable implements Serializable {
             //  if( master._cat != this ) return old;
             //}
 
+            // 扩容生成了一个新对象
             CAT newcat = new CAT(this, t.length * 2, 0);
             // Take 1 stab at updating the CAT with the new larger size.  If this
             // fails, we assume some other thread already expanded the CAT - so we
             // do not need to retry until it succeeds.
+            // 将master的 下个元素替换成新生成的 cat
             while (master._cat == this && !master.CAS_cat(this, newcat)) { /* empty */ }
             return old;
         }
@@ -237,6 +283,11 @@ public class ConcurrentAutoTable implements Serializable {
 
         // Return the current sum of all things in the table.  Writers can be
         // updating the table furiously, so the sum is only locally accurate.
+
+        /**
+         * 当前总值就是将链表中所有元素值总和加起来   这里好像是允许脏读的
+         * @return
+         */
         @SuppressWarnings("UnnecessaryLocalVariable")
         public long sum() {
             long sum = _next == null ? 0 : _next.sum(); // Recursively get cached sum
@@ -247,12 +298,15 @@ public class ConcurrentAutoTable implements Serializable {
 
         // Fast fuzzy version.  Used a cached value until it gets old, then re-up
         // the cache.
+        // 获取一个预估值
         public long estimate_sum() {
             // For short tables, just do the work
+            // 当数组长度还比较小的时候直接计算sum
             if (_t.length <= 64) return sum();
-            // For bigger tables, periodically freshen a cached value
+            // For bigger tables, periodically freshen a cached value  在相距1毫秒内 返回缓存值
             long millis = System.currentTimeMillis();
             if (_fuzzy_time != millis) { // Time marches on?
+                // 如果数值比较大的话 就生成一个缓存值 下次尝试获取值时 只要没有超过预定的时间 就继续返回缓存值
                 _fuzzy_sum_cache = sum(); // Get sum the hard way
                 _fuzzy_time = millis;   // Indicate freshness of cached value
             }

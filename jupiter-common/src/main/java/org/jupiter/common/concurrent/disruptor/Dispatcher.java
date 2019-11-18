@@ -23,20 +23,29 @@ import org.jupiter.common.util.JConstants;
  * jupiter
  * org.jupiter.common.concurrent.disruptor
  *
+ * 消息分发处理器
  * @author jiachun.fjc
  */
 public interface Dispatcher<T> {
 
+    /**
+     * ringBuffer 默认大小
+     */
     int BUFFER_SIZE = 32768;
+    /**
+     * 工作线程数
+     */
     int MAX_NUM_WORKERS = JConstants.AVAILABLE_PROCESSORS << 3;
 
     /**
      * Dispatch a task message.
+     * 分发任务
      */
     boolean dispatch(T message);
 
     /**
      * Shutdown
+     * 终止该分发对象
      */
     void shutdown();
 }

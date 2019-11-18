@@ -30,34 +30,49 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.tracing
  *
+ * 链路追踪工厂  这里借助第三方的框架 而不是自身实现
  * @author jiachun.fjc
  */
 public interface TracerFactory {
 
+    /**
+     * 默认的链路工厂
+     */
     TracerFactory DEFAULT = new DefaultTracerFactory();
 
     /**
      * Get a {@link Tracer} implementation.
+     * 获取链路对象
      */
     Tracer getTracer();
 
+    /**
+     * 默认实现类 该工厂可以生成链路对象
+     */
     class DefaultTracerFactory implements TracerFactory {
 
         private static final InternalLogger logger = InternalLoggerFactory.getInstance(DefaultTracerFactory.class);
 
         private static Tracer tracer = loadTracer();
 
+        /**
+         * 加载链路对象
+         * @return
+         */
         private static Tracer loadTracer() {
             try {
+                // 通过SPI 加载实现类
                 Iterator<Tracer> implementations = JServiceLoader.load(Tracer.class).iterator();
                 if (implementations.hasNext()) {
                     Tracer first = implementations.next();
+                    // 只有一个实现类 直接返回
                     if (!implementations.hasNext()) {
                         return first;
                     }
 
                     logger.warn("More than one tracer is found, NoopTracer will be used as default.");
 
+                    // 如果存在多个 则使用noop 的 链路对象
                     return NoopTracerFactory.create();
                 }
             } catch (Throwable t) {

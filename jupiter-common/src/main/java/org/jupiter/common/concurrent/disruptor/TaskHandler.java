@@ -28,7 +28,7 @@ import com.lmax.disruptor.WorkHandler;
  *
  * jupiter
  * org.jupiter.common.concurrent.disruptor
- *
+ * 任务被发送到 disruptor 中 会通过该对象进行消费
  * @author jiachun.fjc
  */
 public class TaskHandler implements
@@ -36,6 +36,7 @@ public class TaskHandler implements
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(TaskHandler.class);
 
+    // 接收到任务后直接执行 .run() 就可以
     @Override
     public void onEvent(MessageEvent<Runnable> event, long sequence, boolean endOfBatch) throws Exception {
         event.getMessage().run();

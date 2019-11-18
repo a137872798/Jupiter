@@ -88,7 +88,7 @@ import org.jupiter.common.util.internal.UnsafeUtil;
  * @param <TypeV> the type of mapped values
  * @author Cliff Click
  * @since 1.5
- *
+ * 无阻塞 hashMap   TODO 先放一下
  * Forked from <a href="https://github.com/JCTools/JCTools">JCTools</a>.
  */
 public class NonBlockingHashMap<TypeK, TypeV>
@@ -99,13 +99,23 @@ public class NonBlockingHashMap<TypeK, TypeV>
 
     private static Unsafe unsafe = UnsafeUtil.getUnsafeAccessor().getUnsafe();
 
+    /**
+     * 最多允许10个探针
+     */
     private static final int REPROBE_LIMIT = 10; // Too many reprobes then force a table-resize
 
-    // --- Bits to allow Unsafe access to arrays
+    // --- Bits to allow Unsafe access to arrays  获取unsafe相关偏移量
     private static final int _Obase = unsafe.arrayBaseOffset(Object[].class);
     private static final int _Oscale = unsafe.arrayIndexScale(Object[].class);
+    // 幂
     private static final int _Olog = _Oscale == 4 ? 2 : (_Oscale == 8 ? 3 : 9999);
 
+    /**
+     * 获取 ary数组 对应idx 下标的元素的起始偏移量 便于使用unsafe
+     * @param ary
+     * @param idx
+     * @return
+     */
     private static long rawIndex(final Object[] ary, final int idx) {
         assert idx >= 0 && idx < ary.length;
         // Note the long-math requirement, to handle arrays of more than 2^31 bytes
@@ -113,7 +123,7 @@ public class NonBlockingHashMap<TypeK, TypeV>
         return _Obase + ((long) idx << _Olog);
     }
 
-    // --- Setup to use Unsafe
+    // --- Setup to use Unsafe  记录内部 Object数组的偏移量
     private static final long _kvs_offset;
 
     static {                      // <clinit>
@@ -126,11 +136,18 @@ public class NonBlockingHashMap<TypeK, TypeV>
         _kvs_offset = unsafe.objectFieldOffset(f);
     }
 
+    /**
+     * 以原子方式更换 _kvs
+     * @param oldkvs
+     * @param newkvs
+     * @return
+     */
     private boolean CAS_kvs(final Object[] oldkvs, final Object[] newkvs) {
         return unsafe.compareAndSwapObject(this, _kvs_offset, oldkvs, newkvs);
     }
 
     // --- Adding a 'prime' bit onto Values via wrapping with a junk wrapper class
+    // 一个包装对象
     private static final class Prime {
         final Object _V;
 
@@ -164,17 +181,29 @@ public class NonBlockingHashMap<TypeK, TypeV>
     // during standard 'get' operations.  I assume 'get' is much more frequent
     // than 'put'.  'get' can skip the extra indirection of skipping through the
     // CHM to reach the _kvs array.
+    // 内部就是维护一个简单的 Object数组对象
     private transient Object[] _kvs;
 
+    /**
+     * 获取首个元素并转换成CHM 对象
+     * @param kvs
+     * @return
+     */
     private static CHM chm(Object[] kvs) {
         return (CHM) kvs[0];
     }
 
+    /**
+     * 数组中第一个元素记录了 hash值
+     * @param kvs
+     * @return
+     */
     private static int[] hashes(Object[] kvs) {
         return (int[]) kvs[1];
     }
 
     // Number of K,V pairs in the table
+    // 看来 k，v 各占一个槽 所以长度 除去chm 和 hashes 的部分后还要/2
     private static int len(Object[] kvs) {
         return (kvs.length - 2) >> 1;
     }

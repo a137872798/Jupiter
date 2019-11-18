@@ -4,19 +4,19 @@ import java.util.Map;
 
 /**
  * Interface for a primitive map that uses {@code byte}s as keys.
- *
+ * 该接口强制要求 key 必须是 Byte类型
  * @param <V> the value type stored in the map.
  */
 public interface ByteObjectMap<V> extends Map<Byte, V> {
 
     /**
      * A primitive entry in the map, provided by the iterator from {@link #entries()}
-     *
+     * 原始类型实体
      * @param <V> the value type stored in the map.
      */
     interface PrimitiveEntry<V> {
         /**
-         * Gets the key for this entry.
+         * Gets the key for this entry. key 是原始类型
          */
         byte key();
 
@@ -60,6 +60,7 @@ public interface ByteObjectMap<V> extends Map<Byte, V> {
      * Gets an iterable to traverse over the primitive entries contained in this map. As an optimization,
      * the {@link PrimitiveEntry}s returned by the Iterator may change as the Iterator
      * progresses. The caller should not rely on {@link PrimitiveEntry} key/value stability.
+     * 返回的迭代器中entry 的key 是原始类型
      */
     Iterable<PrimitiveEntry<V>> entries();
 

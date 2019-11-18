@@ -46,6 +46,7 @@ public class RejectedTaskPolicyWithReport extends AbstractRejectedExecutionHandl
         if (r instanceof RejectedRunnable) {
             ((RejectedRunnable) r).rejected(); // 交给用户来处理
         } else {
+            // 默认情况也是丢弃任务 如果用户自定义了拒绝逻辑 采用用户的逻辑
             if (!e.isShutdown()) {
                 BlockingQueue<Runnable> queue = e.getQueue();
                 int discardSize = queue.size() >> 1;

@@ -33,15 +33,24 @@ import static org.jupiter.common.util.StackTraceUtil.stackTrace;
 /**
  * Jupiter
  * org.jupiter.common.concurrent
- *
+ * 拒绝策略对象
  * @author jiachun.fjc
  */
 public abstract class AbstractRejectedExecutionHandler implements RejectedExecutionHandler {
 
     protected static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractRejectedExecutionHandler.class);
 
+    /**
+     * 代表该拒绝策略是针对哪个线程池的
+     */
     protected final String threadPoolName;
+    /**
+     * 是否应该转储
+     */
     private final AtomicBoolean dumpNeeded;
+    /**
+     * 转储前缀
+     */
     private final String dumpPrefixName;
 
     public AbstractRejectedExecutionHandler(String threadPoolName, boolean dumpNeeded, String dumpPrefixName) {
@@ -50,22 +59,31 @@ public abstract class AbstractRejectedExecutionHandler implements RejectedExecut
         this.dumpPrefixName = dumpPrefixName;
     }
 
+    /**
+     * 将当前jvm信息保存到某个文件中
+     */
     public void dumpJvmInfoIfNeeded() {
+        // 只允许转储一次 之后就会将该值设置为false
         if (dumpNeeded.getAndSet(false)) {
             String now = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
             String name = threadPoolName + "_" + now;
+            // 生成文件用于记录当前被转储的数据
             try (FileOutputStream fileOutput = new FileOutputStream(new File(dumpPrefixName + "_dump_" + name + ".log"))) {
 
+                // 生成当前所有线程的栈轨迹信息
                 List<String> stacks = JvmTools.jStack();
                 for (String s : stacks) {
+                    // 写入到文件中
                     fileOutput.write(s.getBytes(StandardCharsets.UTF_8));
                 }
 
+                // 获取当前内存使用情况
                 List<String> memoryUsages = JvmTools.memoryUsage();
                 for (String m : memoryUsages) {
                     fileOutput.write(m.getBytes(StandardCharsets.UTF_8));
                 }
 
+                // 获取使用率 如果超过了90%  该方法是 sun 的先不管
                 if (JvmTools.memoryUsed() > 0.9) {
                     JvmTools.jMap(dumpPrefixName + "_dump_" + name + ".hprof", false);
                 }

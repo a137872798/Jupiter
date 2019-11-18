@@ -29,16 +29,32 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.common.util
  *
+ * 最简单的线程工厂， 就是为每个生成的线程定制名字
  * @author jiachun.fjc
  */
 public class NamedThreadFactory implements ThreadFactory {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NamedThreadFactory.class);
 
+    /**
+     * 生成线程的id  每生成一条线程就会有一个唯一id
+     */
     private final AtomicInteger id = new AtomicInteger();
+    /**
+     * 线程名前缀
+     */
     private final String name;
+    /**
+     * 是否是守护线程
+     */
     private final boolean daemon;
+    /**
+     * 该线程优先级
+     */
     private final int priority;
+    /**
+     * 该线程所属线程组
+     */
     private final ThreadGroup group;
 
     public NamedThreadFactory(String name) {
@@ -61,6 +77,11 @@ public class NamedThreadFactory implements ThreadFactory {
         group = (s == null) ? Thread.currentThread().getThreadGroup() : s.getThreadGroup();
     }
 
+    /**
+     * 核心方法(生成一条可用线程)
+     * @param r
+     * @return
+     */
     @Override
     public Thread newThread(Runnable r) {
         Requires.requireNotNull(r, "runnable");
@@ -69,6 +90,7 @@ public class NamedThreadFactory implements ThreadFactory {
 
         Runnable r2 = wrapRunnable(r);
 
+        // 这里返回的是类似netty的优化过的线程
         Thread t = wrapThread(group, r2, name2);
 
         try {

@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * jupiter
  * org.jupiter.common.concurrent
  *
+ * 采取丢弃任务的方式
  * @author jiachun.fjc
  */
 public class DiscardTaskPolicyWithReport extends AbstractRejectedExecutionHandler {
@@ -43,6 +44,7 @@ public class DiscardTaskPolicyWithReport extends AbstractRejectedExecutionHandle
         dumpJvmInfoIfNeeded();
 
         if (!e.isShutdown()) {
+            // 选择将早前加入的一半任务丢弃，之后设置本次任务
             BlockingQueue<Runnable> queue = e.getQueue();
             int discardSize = queue.size() >> 1;
             for (int i = 0; i < discardSize; i++) {

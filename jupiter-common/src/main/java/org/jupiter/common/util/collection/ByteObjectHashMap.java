@@ -34,11 +34,13 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
     /**
      * Placeholder for null values, so we can use the actual null to mean available.
      * (Better than using a placeholder for available: less references for GC processing.)
+     * 使用空对象进行占位  这样null 就可以作为一个有效的key
      */
     private static final Object NULL_VALUE = new Object();
 
     /**
      * The maximum number of elements allowed without allocating more space.
+     * 该map 允许的最大长度
      */
     private int maxSize;
 
@@ -47,7 +49,13 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
      */
     private final float loadFactor;
 
+    /**
+     * 存放key 的数组
+     */
     private byte[] keys;
+    /**
+     * 存放value 的数组  看来该map实际上是将key 和 value 分别存放在2个数组中
+     */
     private V[] values;
     private int size;
     private int mask;
@@ -505,6 +513,7 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
 
     /**
      * Set implementation for iterating over the entries of the map.
+     * 一个简易的 set 用于遍历该map 对象
      */
     private final class EntrySet extends AbstractSet<Entry<Byte, V>> {
         @Override
