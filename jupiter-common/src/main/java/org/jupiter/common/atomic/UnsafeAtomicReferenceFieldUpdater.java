@@ -26,6 +26,7 @@ import sun.misc.Unsafe;
  * org.jupiter.common.concurrent.atomic
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 基于unsafe 的原子更新
  */
 @SuppressWarnings("unchecked")
 final class UnsafeAtomicReferenceFieldUpdater<U, W> extends AtomicReferenceFieldUpdater<U, W> {
@@ -34,6 +35,7 @@ final class UnsafeAtomicReferenceFieldUpdater<U, W> extends AtomicReferenceField
 
     UnsafeAtomicReferenceFieldUpdater(Unsafe unsafe, Class<U> tClass, String fieldName) throws NoSuchFieldException {
         Field field = tClass.getDeclaredField(fieldName);
+        // 首先能被原子更新的字段必须被volatile 修饰(否则即使原子更新 读取还是走的高速缓存，还是过时数据)
         if (!Modifier.isVolatile(field.getModifiers())) {
             throw new IllegalArgumentException("Field [" + fieldName + "] must be volatile");
         }
@@ -41,6 +43,7 @@ final class UnsafeAtomicReferenceFieldUpdater<U, W> extends AtomicReferenceField
             throw new NullPointerException("unsafe");
         }
         this.unsafe = unsafe;
+        // 获取该字段的偏移量便于更改数据
         offset = unsafe.objectFieldOffset(field);
     }
 

@@ -20,6 +20,7 @@ package org.jupiter.common.util.internal.logging;
  * access this class outside of Jupiter.
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 内部日志工厂
  */
 public interface InternalLogger {
 

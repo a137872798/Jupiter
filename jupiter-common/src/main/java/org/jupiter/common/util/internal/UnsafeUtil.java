@@ -30,6 +30,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * unsafe工具类
  * @author jiachun.fjc
  */
 @SuppressWarnings("ConstantConditions")
@@ -393,6 +394,10 @@ public final class UnsafeUtil {
         return hasUnsafe() ? new UnsafeAccessor(UNSAFE) : null;
     }
 
+    /**
+     * 通过反射方式获取 unsafe 对象， 该对象可以以原子方式更新字段的值
+     * @return
+     */
     private static Object getUnsafe0() {
         Object unsafe;
         try {

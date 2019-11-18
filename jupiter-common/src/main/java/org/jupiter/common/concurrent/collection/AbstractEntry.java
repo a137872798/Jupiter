@@ -25,6 +25,7 @@ import java.util.Map;
  * @since 1.5
  *
  * Forked from <a href="https://github.com/JCTools/JCTools">JCTools</a>.
+ * 一种简易的entry实现
  */
 abstract class AbstractEntry<TypeK, TypeV> implements Map.Entry<TypeK, TypeV> {
     /**

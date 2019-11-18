@@ -31,6 +31,7 @@ public final class AtomicUpdater {
 
     /**
      * Creates and returns an updater for objects with the given field.
+     * 生成一个能够以原子方式更新字段的对象
      *
      * @param tClass    the class of the objects holding the field.
      * @param vClass    the class of the field
@@ -40,8 +41,10 @@ public final class AtomicUpdater {
             Class<U> tClass, Class<W> vClass, String fieldName) {
         try {
             if (UnsafeUtil.hasUnsafe()) {
+                // 直接操作unsafe进行原子更新
                 return new UnsafeAtomicReferenceFieldUpdater<>(UnsafeUtil.getUnsafeAccessor().getUnsafe(), tClass, fieldName);
             } else {
+                // 获取jdk自带的原子更新对象
                 return AtomicReferenceFieldUpdater.newUpdater(tClass, vClass, fieldName);
             }
         } catch (Throwable t) {

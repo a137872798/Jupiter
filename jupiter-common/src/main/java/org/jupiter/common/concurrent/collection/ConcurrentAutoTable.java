@@ -33,6 +33,7 @@ import org.jupiter.common.util.internal.UnsafeUtil;
  * @since 1.5
  *
  * Forked from <a href="https://github.com/JCTools/JCTools">JCTools</a>.
+ * 具备自动扩容的低竞争并发容器
  */
 public class ConcurrentAutoTable implements Serializable {
 
