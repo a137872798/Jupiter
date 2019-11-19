@@ -24,10 +24,19 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public abstract class AbstractConstant<T extends AbstractConstant<T>> implements Constant<T> {
 
+    /**
+     * id生成器
+     */
     private static final AtomicLong uniqueIdGenerator = new AtomicLong();
 
+    /**
+     * id值
+     */
     private final int id;
     private final String name;
+    /**
+     * id唯一值
+     */
     private final long uniqueId;
 
     /**

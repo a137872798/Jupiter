@@ -24,7 +24,7 @@ import org.jupiter.registry.RegistryMonitor;
 /**
  * jupiter
  * org.jupiter.monitor.handler
- *
+ * 通过服务信息查找对应服务
  * @author jiachun.fjc
  */
 public class ByServiceHandler extends ChildCommandHandler<RegistryHandler> {

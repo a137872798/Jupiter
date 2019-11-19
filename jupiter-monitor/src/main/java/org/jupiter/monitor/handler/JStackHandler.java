@@ -28,6 +28,7 @@ import org.jupiter.monitor.Command;
  * Jupiter
  * org.jupiter.monitor.handler
  *
+ * 返回当前所有栈信息 (如果监控中心与服务提供者部署在一个机器上就能直接返回提供者当前的栈轨迹信息了)
  * @author jiachun.fjc
  */
 public class JStackHandler implements CommandHandler {

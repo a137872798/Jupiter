@@ -22,9 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A pool of {@link Constant}s.
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 常量池  该对象本身的实现类 就是static 修饰 这样就是长生命周期
  */
 public abstract class ConstantPool<T extends Constant<T>> {
 
+    /**
+     * 内部维护名称与 常量的映射关系
+     */
     private final ConcurrentMap<String, T> constants = Maps.newConcurrentMap();
 
     private final AtomicInteger nextId = new AtomicInteger(1);
@@ -45,6 +49,7 @@ public abstract class ConstantPool<T extends Constant<T>> {
      * Once created, the subsequent calls with the same {@code name} will always return the previously created one
      * (i.e. singleton.)
      *
+     * 生成指定的值
      * @param name the name of the {@link Constant}
      */
     public T valueOf(String name) {
@@ -60,6 +65,7 @@ public abstract class ConstantPool<T extends Constant<T>> {
     private T getOrCreate(String name) {
         T constant = constants.get(name);
         if (constant == null) {
+            // 初始化一个常量 同时传入一个nextId 作为id
             final T newConstant = newConstant(nextId.getAndIncrement(), name);
             constant = constants.putIfAbsent(name, newConstant);
             if (constant == null) {
@@ -80,6 +86,7 @@ public abstract class ConstantPool<T extends Constant<T>> {
     /**
      * Creates a new {@link Constant} for the given {@code name} or fail with an
      * {@link IllegalArgumentException} if a {@link Constant} for the given {@code name} exists.
+     * 生成常量对象  如果该name 对应的常量已经存在就抛出异常
      */
     public T newInstance(String name) {
         Requires.requireTrue(!Strings.isNullOrEmpty(name), "empty name");

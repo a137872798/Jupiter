@@ -23,6 +23,7 @@ import sun.misc.Unsafe;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * 基于unsafe对象对字段进行设置
  * @author jiachun.fjc
  */
 final class UnsafeIntegerFieldUpdater<U> implements IntegerFieldUpdater<U> {

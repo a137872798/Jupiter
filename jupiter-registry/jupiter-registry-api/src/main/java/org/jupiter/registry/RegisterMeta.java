@@ -23,17 +23,18 @@ package org.jupiter.registry;
  * jupiter
  * org.jupiter.registry
  *
+ * 针对注册到注册中心上时需要设置的元数据
  * @author jiachun.fjc
  */
 public class RegisterMeta {
 
-    // 地址
+    // 地址 提供本服务的机器ip
     private Address address = new Address();
-    // metadata
+    // metadata 针对服务的元数据信息
     private ServiceMeta serviceMeta = new ServiceMeta();
-    // 权重 hashCode() 与 equals() 不把weight计算在内
+    // 权重 hashCode() 与 equals() 不把weight计算在内   每个注册对象还有自己的权重信息
     private volatile int weight;
-    // 建议连接数, jupiter客户端会根据connCount的值去建立对应数量的连接, hashCode() 与 equals() 不把connCount计算在内
+    // 建议连接数, jupiter客户端会根据connCount的值去建立对应数量的连接, hashCode() 与 equals() 不把connCount计算在内  每个服务有自己建议的连接数
     private volatile int connCount;
 
     public String getHost() {
@@ -130,6 +131,7 @@ public class RegisterMeta {
 
     /**
      * 不要轻易修改成员变量, 否则将影响hashCode和equals, Address需要经常放入List, Map等容器中.
+     * 描述某个机器的 ip地址
      */
     public static class Address {
         // 地址

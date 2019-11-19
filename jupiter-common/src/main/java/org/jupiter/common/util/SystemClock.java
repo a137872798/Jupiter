@@ -61,13 +61,22 @@ class RhsTimePadding extends Time {
  * as well as indirectly by the C library.  So there were no context-switch
  * overhead and this optimization is actually unnecessary.
  * See <A></>http://man7.org/linux/man-pages/man7/vdso.7.html</A>
+ *
+ * 该类主要是避免多线程 调用ystem.currentTimeMillis() 导致性能下降
+ * 注意在上面的说明中 System.currentTimeMillis() 实际上没有上下文切换  该优化是不必要的
  */
 public class SystemClock extends RhsTimePadding {
 
     private static final long NOW_VALUE_OFFSET = UnsafeUtil.objectFieldOffset(Time.class, "now");
 
+    /**
+     * 全局单例
+     */
     private static final SystemClock millisClock = new SystemClock(1);
 
+    /**
+     * 更新的间隔时间 以毫秒为单位
+     */
     private final long precision;
 
     public static SystemClock millisClock() {
@@ -80,6 +89,9 @@ public class SystemClock extends RhsTimePadding {
         scheduleClockUpdating();
     }
 
+    /**
+     * 开启定时任务去更新 时钟
+     */
     private void scheduleClockUpdating() {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread t = new Thread(runnable, "system.clock");

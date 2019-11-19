@@ -33,6 +33,7 @@ public final class Reflects {
 
     /**
      * Maps primitive {@link Class}es to their corresponding wrapper {@link Class}.
+     * key 是原始类型 value 是包装类
      */
     private static final Map<Class<?>, Class<?>> primitiveWrapperMap = Maps.newIdentityHashMap();
 
@@ -50,6 +51,7 @@ public final class Reflects {
 
     /**
      * Maps wrapper {@link Class}es to their corresponding primitive types.
+     * key 是包装类型 value 是原始类型
      */
     private static final Map<Class<?>, Class<?>> wrapperPrimitiveMap = Maps.newIdentityHashMap();
 
@@ -189,6 +191,7 @@ public final class Reflects {
     public static Object getTypeDefaultValue(Class<?> clazz) {
         Requires.requireNotNull(clazz, "clazz");
 
+        // 如果是原始类型 返回默认值
         if (clazz.isPrimitive()) {
             if (clazz == byte.class) {
                 return (byte) 0;
@@ -240,13 +243,15 @@ public final class Reflects {
 
     /**
      * Find an array of parameter {@link Type}s that matches the given compatible parameters.
+     * @param parameterTypesList 该list 中每个元素 都是 一个 class[]  用于与 参数 obj 进行匹配
+     *                           该方法会从 多个 Class[] 中找出与 参数类型最接近的一组
      */
     public static Class<?>[] findMatchingParameterTypes(List<Class<?>[]> parameterTypesList, Object[] args) {
         if (parameterTypesList.size() == 1) {
             return parameterTypesList.get(0);
         }
 
-        // 获取参数类型
+        // 获取参数类型    存放参数类型的数组
         Class<?>[] parameterTypes;
         if (args == null || args.length == 0) {
             parameterTypes = new Class[0];

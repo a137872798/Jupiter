@@ -17,6 +17,7 @@ import org.jupiter.common.util.Ints;
  * Collisions are resolved using linear probing. Deletions implement compaction, so cost of
  * remove can approach O(N) for full maps, which makes a small loadFactor recommended.
  *
+ * key 为包装类型， 同时调用迭代器时 会返回一组key为原始类型(byte)的entry
  * @param <V> The value type stored in the map.
  */
 public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
@@ -34,7 +35,8 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
     /**
      * Placeholder for null values, so we can use the actual null to mean available.
      * (Better than using a placeholder for available: less references for GC processing.)
-     * 使用空对象进行占位  这样null 就可以作为一个有效的key
+     * 使用空对象进行占位  这样null 就可以作为一个有效的key   这里提前创建对象进行填充是借鉴了 Disruptor的思想 如果将null作为无值的话
+     * 会经常性的触发GC
      */
     private static final Object NULL_VALUE = new Object();
 
@@ -60,8 +62,14 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
     private int size;
     private int mask;
 
+    /**
+     * 该容器需要保留去重的特性
+     */
     private final Set<Byte> keySet = new KeySet();
     private final Set<Entry<Byte, V>> entrySet = new EntrySet();
+    /**
+     * 初始化迭代器对象
+     */
     private final Iterable<PrimitiveEntry<V>> entries = PrimitiveIterator::new;
 
     public ByteObjectHashMap() {
@@ -113,6 +121,12 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
         return index == -1 ? null : toExternal(values[index]);
     }
 
+    /**
+     * 该容器使用线性探测法解决冲突
+     * @param key   the key of the entry.
+     * @param value the value of the entry.
+     * @return
+     */
     @Override
     public V put(byte key, V value) {
         int startIndex = hashIndex(key);
@@ -122,10 +136,12 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
             if (values[index] == null) {
                 // Found empty slot, use it.
                 keys[index] = key;
+                // 如果设置null 需要修改成 UNSET
                 values[index] = toInternal(value);
                 growSize();
                 return null;
             }
+            // 如果key相同就可以替换
             if (keys[index] == key) {
                 // Found existing entry with this key, just replace the value.
                 V previousValue = values[index];
@@ -134,6 +150,7 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
             }
 
             // Conflict, keep probing ...
+            // 使用线性探测法
             if ((index = probeNext(index)) == startIndex) {
                 // Can only happen if the map was full at MAX_ARRAY_SIZE and couldn't grow.
                 throw new IllegalStateException("Unable to insert");
@@ -331,7 +348,7 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
 
     /**
      * Locates the index for the given key. This method probes using double hashing.
-     *
+     * 使用线性探测法解决hash冲突
      * @param key the key for an entry in the map.
      * @return the index where the key was found, or {@code -1} if no entry is found for that key.
      */
@@ -529,6 +546,7 @@ public class ByteObjectHashMap<V> implements ByteObjectMap<V> {
 
     /**
      * Set implementation for iterating over the keys.
+     * 一个简易的实现
      */
     private final class KeySet extends AbstractSet<Byte> {
         @Override

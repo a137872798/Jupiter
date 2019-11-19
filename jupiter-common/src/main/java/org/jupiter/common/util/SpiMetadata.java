@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
  * Jupiter
  * org.jupiter.common.util
  *
+ * 对应SPI实现类的优先级
  * @author jiachun.fjc
  */
 @Documented
@@ -32,7 +33,15 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface SpiMetadata {
 
+    /**
+     * 用于 spi工厂查询实现类的标识
+     * @return
+     */
     String name() default "";
 
+    /**
+     * 某个接口有多个实现类时的优先级
+     * @return
+     */
     int priority() default 0;
 }

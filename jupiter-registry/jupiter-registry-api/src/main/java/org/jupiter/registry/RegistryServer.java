@@ -28,10 +28,14 @@ import org.jupiter.common.util.ThrowUtil;
  * jupiter
  * org.jupiter.registry
  *
+ * 注册中心对应的服务器
  * @author jiachun.fjc
  */
 public interface RegistryServer extends RegistryMonitor {
 
+    /**
+     * 启动注册中心
+     */
     void startRegistryServer();
 
     /**
@@ -40,7 +44,13 @@ public interface RegistryServer extends RegistryMonitor {
     @SuppressWarnings("unchecked")
     class Default {
 
+        /**
+         * 注册中心默认实现类
+         */
         private static final Class<RegistryServer> defaultRegistryClass;
+        /**
+         * 维护所有构造函数
+         */
         private static final List<Class<?>[]> allConstructorsParameterTypes;
 
         static {

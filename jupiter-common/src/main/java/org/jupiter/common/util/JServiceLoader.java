@@ -36,22 +36,34 @@ import java.util.ServiceConfigurationError;
  * jupiter
  * org.jupiter.common.util
  *
+ * SPI工厂
+ *
  * @author jiachun.fjc
  */
 public final class JServiceLoader<S> implements Iterable<S> {
 
+    /**
+     * 指定文件路径
+     */
     private static final String PREFIX = "META-INF/services/";
 
     // the class or interface representing the service being loaded
+    /**
+     * 将要加载的class
+     */
     private final Class<S> service;
 
     // the class loader used to locate, load, and instantiate providers
+    /**
+     * 加载该类指定的类加载器
+     */
     private final ClassLoader loader;
 
     // cached providers, in instantiation order
+    // 加载出来的多种实现类
     private LinkedHashMap<String, S> providers = new LinkedHashMap<>();
 
-    // the current lazy-lookup iterator
+    // the current lazy-lookup iterator  惰性迭代器 只有在尝试获取的时候才进行加载 因为本身加载比较耗时 所以没有一开始就加载全部数据
     private LazyIterator lookupIterator;
 
     public static <S> JServiceLoader<S> load(Class<S> service) {
@@ -62,6 +74,10 @@ public final class JServiceLoader<S> implements Iterable<S> {
         return new JServiceLoader<>(service, loader);
     }
 
+    /**
+     * 同一接口可能会加载到多个实现类 那么就需要进行排序
+     * @return
+     */
     public List<S> sort() {
         List<S> sortList = Lists.newArrayList(iterator());
 
@@ -83,6 +99,10 @@ public final class JServiceLoader<S> implements Iterable<S> {
         return sortList;
     }
 
+    /**
+     * 找到SPI 多个实现类中的第一个
+     * @return
+     */
     public S first() {
         List<S> sortList = sort();
         if (sortList.isEmpty()) {
@@ -91,8 +111,14 @@ public final class JServiceLoader<S> implements Iterable<S> {
         return sortList.get(0);
     }
 
+    /**
+     * 查询某个类
+     * @param implName
+     * @return
+     */
     public S find(String implName) {
         for (S s : providers.values()) {
+            // 必须元数据中的name 匹配才能返回
             SpiMetadata spi = s.getClass().getAnnotation(SpiMetadata.class);
             if (spi != null && spi.name().equalsIgnoreCase(implName)) {
                 return s;
@@ -100,6 +126,7 @@ public final class JServiceLoader<S> implements Iterable<S> {
         }
         while (lookupIterator.hasNext()) {
             Class<S> cls = lookupIterator.next();
+            // 从元数据中找到匹配的实现类
             SpiMetadata spi = cls.getAnnotation(SpiMetadata.class);
             if (spi != null && spi.name().equalsIgnoreCase(implName)) {
                 try {
@@ -116,11 +143,13 @@ public final class JServiceLoader<S> implements Iterable<S> {
 
     public void reload() {
         providers.clear();
+        // 生成惰性加载器 当需要获取数据时 开始加载
         lookupIterator = new LazyIterator(service, loader);
     }
 
     private JServiceLoader(Class<S> service, ClassLoader loader) {
         this.service = Requires.requireNotNull(service, "service interface cannot be null");
+        // 当没有指定类加载器时 默认使用 AppClassLoader 即应用级别类加载器 一般情况下使用的类(用户类而不是jdk自带的)都是通过该类加载的
         this.loader = (loader == null) ? ClassLoader.getSystemClassLoader() : loader;
         reload();
     }
@@ -173,6 +202,12 @@ public final class JServiceLoader<S> implements Iterable<S> {
         return lc + 1;
     }
 
+    /**
+     * 解析 spi文件数据
+     * @param service
+     * @param url
+     * @return
+     */
     private Iterator<String> parse(Class<?> service, URL url) {
         ArrayList<String> names = new ArrayList<>();
         try (InputStream in = url.openStream();
@@ -220,8 +255,17 @@ public final class JServiceLoader<S> implements Iterable<S> {
         };
     }
 
+    /**
+     * 惰性迭代器
+     */
     private class LazyIterator implements Iterator<Class<S>> {
+        /**
+         * 查询的目标类
+         */
         Class<S> service;
+        /**
+         * 加载类使用的类加载器
+         */
         ClassLoader loader;
         Enumeration<URL> configs = null;
         Iterator<String> pending = null;
@@ -234,9 +278,11 @@ public final class JServiceLoader<S> implements Iterable<S> {
 
         @Override
         public boolean hasNext() {
+            // nextName 不为null 代表已经找到了某个类
             if (nextName != null) {
                 return true;
             }
+            // 当config 还没初始化时 去默认的地址加载数据
             if (configs == null) {
                 try {
                     String fullName = PREFIX + service.getName();
@@ -249,16 +295,22 @@ public final class JServiceLoader<S> implements Iterable<S> {
                     throw fail(service, "error locating configuration files", x);
                 }
             }
+            // 当还有资源可以遍历时
             while ((pending == null) || !pending.hasNext()) {
                 if (!configs.hasMoreElements()) {
                     return false;
                 }
+                // 将每行 services 文件中的数据都转换成 pending
                 pending = parse(service, configs.nextElement());
             }
             nextName = pending.next();
             return true;
         }
 
+        /**
+         * 从惰性迭代器中加载类  一开始SPI 的实现类都在 hasNext中获取了 但是还没有被JVM加载
+         * @return
+         */
         @SuppressWarnings("unchecked")
         @Override
         public Class<S> next() {

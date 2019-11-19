@@ -21,6 +21,7 @@ import org.slf4j.Logger;
  * <a href="http://www.slf4j.org/">SLF4J</a> logger.
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 适配对象
  */
 class Slf4JLogger extends AbstractInternalLogger {
 

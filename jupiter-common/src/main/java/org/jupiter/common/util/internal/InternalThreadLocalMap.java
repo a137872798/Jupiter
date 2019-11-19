@@ -167,7 +167,7 @@ public final class InternalThreadLocalMap extends RhsPadding {
     }
 
     /**
-     * 将指定对象设置到数组中   这个填充数组是为了避免数组被GC回收吗???
+     * 将指定对象设置到数组中
      * @return {@code true} if and only if a new thread-local variable has been created  只有从 UNSET 变成一个有效的值才会返回true
      */
     public boolean setIndexedVariable(int index, Object value) {

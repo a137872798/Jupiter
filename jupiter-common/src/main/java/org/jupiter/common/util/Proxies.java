@@ -27,6 +27,7 @@ import net.bytebuddy.matcher.ElementMatchers;
  * jupiter
  * org.jupiter.common.util
  *
+ * 动态代理实现
  * @author jiachun.fjc
  */
 public enum Proxies {
@@ -69,6 +70,10 @@ public enum Proxies {
         this.delegate = delegate;
     }
 
+    /**
+     * 默认使用 byteBuddy 作为动态代理工具
+     * @return
+     */
     public static Proxies getDefault() {
         return BYTE_BUDDY;
     }
@@ -77,12 +82,17 @@ public enum Proxies {
         return delegate.newProxy(interfaceType, handler);
     }
 
+    /**
+     * 动态代理接口
+     */
     interface ProxyDelegate {
 
         /**
          * Returns a proxy instance that implements {@code interfaceType} by dispatching
          * method invocations to {@code handler}. The class loader of {@code interfaceType}
          * will be used to define the proxy class.
+         * @param interfaceType 指定接口类型
+         * @param handler 指定包含代理处理逻辑的handler
          */
         <T> T newProxy(Class<T> interfaceType, Object handler);
     }

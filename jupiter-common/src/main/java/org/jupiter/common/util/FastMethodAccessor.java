@@ -54,13 +54,24 @@ import static org.objectweb.asm.Opcodes.V1_1;
  * jupiter
  * org.jupiter.common.util
  *
+ * 通过反射读取了method 的信息 并保存起来便于之后快速访问
+ * 并且这些抽取出来的方法不是通过反射调用的， 在使用asm生成动态代理类后，传入需要的参数以及调用invoke方法 能以非反射的方式调用
+ *
+ * 回想一下一个功能相似的类应该是携带 Method[] String[] 这种 然后方法名参数匹配的时候 通过 method.invoke 这种反射的方式来调用
  * @author jiachun.fjc
  */
 public abstract class FastMethodAccessor {
 
+    /**
+     * 维护了每个类对应的 fastMethodAccessor 对象
+     */
     private static final ConcurrentMap<Class<?>, FastMethodAccessor> fastAccessorCache = Maps.newConcurrentMap();
 
+    /**
+     * 某个类对应的全部方法
+     */
     private String[] methodNames;
+
     private Class<?>[][] parameterTypes_s;
 
     /**
@@ -86,6 +97,12 @@ public abstract class FastMethodAccessor {
         return invoke(obj, getIndex(methodName, parameterTypes), args);
     }
 
+    /**
+     * 当方法名和参数列表都匹配的时候
+     * @param methodName
+     * @param parameterTypes
+     * @return
+     */
     public int getIndex(String methodName, Class<?>... parameterTypes) {
         for (int i = 0; i < methodNames.length; i++) {
             if (methodNames[i].equals(methodName) && Arrays.equals(parameterTypes, parameterTypes_s[i])) {
@@ -96,6 +113,11 @@ public abstract class FastMethodAccessor {
                 "Unable to find non-private method: " + methodName + " " + Arrays.toString(parameterTypes));
     }
 
+    /**
+     * 从缓存中获取fastMethodAccessor
+     * @param type
+     * @return
+     */
     public static FastMethodAccessor get(Class<?> type) {
         FastMethodAccessor accessor = fastAccessorCache.get(type);
         if (accessor == null) {
@@ -116,16 +138,23 @@ public abstract class FastMethodAccessor {
         return type;
     }
 
+    /**
+     * 传入某个目标类 生成fastMethodAccessor 对象
+     * @param type
+     * @return
+     */
     private static FastMethodAccessor create(Class<?> type) {
         ArrayList<Method> methods = Lists.newArrayList();
         boolean isInterface = type.isInterface();
         if (!isInterface) {
             Class nextClass = type;
             while (nextClass != Object.class) {
+                // 选择非Object方法
                 addDeclaredMethodsToList(nextClass, methods);
                 nextClass = nextClass.getSuperclass();
             }
         } else {
+            // 递归添加接口方法
             recursiveAddInterfaceMethodsToList(type, methods);
         }
 
@@ -133,6 +162,7 @@ public abstract class FastMethodAccessor {
         String[] methodNames = new String[n];
         Class<?>[][] parameterTypes_s = new Class[n][];
         Class<?>[] returnTypes = new Class[n];
+        // 添加对应的参数列表
         for (int i = 0; i < n; i++) {
             Method method = methods.get(i);
             methodNames[i] = method.getName();
@@ -140,9 +170,13 @@ public abstract class FastMethodAccessor {
             returnTypes[i] = method.getReturnType();
         }
 
+        // 开始生成动态代理对象
         String className = type.getName();
+        // 类名变成比如  java.util.List_FastMethodAccessor
         String accessorClassName = className + "_FastMethodAccessor";
+        // java/util/List_FastMethodAccessor
         String accessorClassNameInternal = accessorClassName.replace('.', '/');
+        // java/util/List
         String classNameInternal = className.replace('.', '/');
         String superClassNameInternal = FastMethodAccessor.class.getName().replace('.', '/');
 
@@ -324,9 +358,15 @@ public abstract class FastMethodAccessor {
         }
     }
 
+    /**
+     * 将 非object 方法添加到 methods 中
+     * @param type
+     * @param methods
+     */
     private static void addDeclaredMethodsToList(Class<?> type, ArrayList<Method> methods) {
         Method[] declaredMethods = type.getDeclaredMethods();
         for (Method method : declaredMethods) {
+            // 只添加非私有方法
             if (!Modifier.isPrivate(method.getModifiers())) {
                 methods.add(method);
             }

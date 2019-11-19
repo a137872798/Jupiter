@@ -56,6 +56,7 @@ public final class UnsafeDirectBufferUtil {
             Class<?> bitsClass = Class.forName("java.nio.Bits", false, UnsafeUtil.getSystemClassLoader());
             Method unalignedMethod = bitsClass.getDeclaredMethod("unaligned");
             unalignedMethod.setAccessible(true);
+            // 这里在获取指令集相关的信息
             _unaligned = (boolean) unalignedMethod.invoke(null);
         } catch (Throwable t) {
             if (logger.isWarnEnabled()) {

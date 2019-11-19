@@ -32,10 +32,15 @@ import org.jupiter.registry.RegistryService.RegisterState;
  * Jupiter
  * org.jupiter.monitor.handler
  *
+ * 查询本地发布的所有消费者和提供者
  * @author jiachun.fjc
  */
 public class LsHandler implements CommandHandler {
 
+    /**
+     * RegistryService 统一为 注册中心服务 这里划分为针对 服务提供者的注册中心 和针对消费者的注册中心
+     * 前提是 注册中心与监控中心部署在同一台机器上
+     */
     private volatile RegistryService serverRegisterService;
     private volatile RegistryService clientRegisterService;
 
@@ -55,6 +60,12 @@ public class LsHandler implements CommandHandler {
         this.clientRegisterService = clientRegisterService;
     }
 
+    /**
+     * 处理某个命令
+     * @param channel 该对象内部携带了对端地址信息 通过它可以将数据返回给对端
+     * @param command 本次客户端发起的命令类型
+     * @param args  commandHandler执行任务需要的参数
+     */
     @Override
     public void handle(Channel channel, Command command, String... args) {
         if (AuthHandler.checkAuth(channel)) {
@@ -63,6 +74,7 @@ public class LsHandler implements CommandHandler {
                 channel.writeAndFlush("Provider side: " + JConstants.NEWLINE);
                 channel.writeAndFlush("--------------------------------------------------------------------------------"
                         + JConstants.NEWLINE);
+                // 将注册在本地的服务提供者信息全部返回
                 Map<RegisterMeta, RegisterState> providers = serverRegisterService.providers();
                 for (Map.Entry<RegisterMeta, RegisterState> entry : providers.entrySet()) {
                     channel.writeAndFlush(entry.getKey() + " | " + entry.getValue().toString() + JConstants.NEWLINE);

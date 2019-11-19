@@ -178,8 +178,7 @@ public class TaskDispatcher implements Dispatcher<Runnable>, Executor {
         if (threadFactory == null) {
             threadFactory = new NamedThreadFactory("disruptor.processor");
         }
-        // 这里将netty的优化线程组合到 disruptor 进一步提高性能
-        // TODO 明天复习下 disruptor 是怎么使用线程工厂的
+        // 这里将netty的优化线程组合到 disruptor 进一步提高性能  在disruptor中 每个消费者对应的线程就是从指定的线程工厂中获取的
         Disruptor<MessageEvent<Runnable>> dr =
                 new Disruptor<>(eventFactory, bufSize, threadFactory, ProducerType.MULTI, waitStrategy);
         dr.setDefaultExceptionHandler(new LoggingExceptionHandler());  // 默认的异常处理器就是打印日志

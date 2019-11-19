@@ -73,6 +73,7 @@ import org.jupiter.transport.netty.NettyTcpAcceptor;
  * jupiter
  * org.jupiter.monitor
  *
+ * 监控服务器  TODO 该对象在梳理完jupiter的服务器逻辑后再看
  * @author jiachun.fjc
  */
 public class MonitorServer extends NettyTcpAcceptor {
@@ -85,14 +86,27 @@ public class MonitorServer extends NettyTcpAcceptor {
     private final TelnetHandler handler = new TelnetHandler();
     private final StringEncoder encoder = new StringEncoder(StandardCharsets.UTF_8);
 
+    /**
+     * 注册中心对外监控api
+     */
     private volatile RegistryMonitor registryMonitor;
+    /**
+     * 服务器对象  用于接收 查询请求
+     */
     private volatile JServer jupiterServer;
+    /**
+     * 客户端对象
+     */
     private volatile JClient jupiterClient;
 
     public MonitorServer() {
         this(DEFAULT_PORT);
     }
 
+    /**
+     * 通过指定端口进行初始化
+     * @param port
+     */
     public MonitorServer(int port) {
         super(port, 1, false);
     }
@@ -140,6 +154,9 @@ public class MonitorServer extends NettyTcpAcceptor {
         this.jupiterClient = jupiterClient;
     }
 
+    /**
+     * 该handler 是用于解析指令的
+     */
     @ChannelHandler.Sharable
     class TelnetHandler extends ChannelInboundHandlerAdapter {
 

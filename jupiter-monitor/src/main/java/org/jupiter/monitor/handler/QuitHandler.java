@@ -31,6 +31,7 @@ public class QuitHandler implements CommandHandler {
 
     @Override
     public void handle(Channel channel, Command command, String... args) {
+        // 该方法会销毁连接  之后如果要访问又要重新认证 不过这样会避免长连接开销
         channel.writeAndFlush("Bye bye!" + JConstants.NEWLINE)
                 .addListener(ChannelFutureListener.CLOSE);
     }

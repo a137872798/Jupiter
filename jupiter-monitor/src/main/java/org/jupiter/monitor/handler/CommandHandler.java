@@ -29,5 +29,11 @@ import org.jupiter.monitor.Command;
  */
 public interface CommandHandler {
 
+    /**
+     *
+     * @param channel 该对象内部携带了对端地址信息 通过它可以将数据返回给对端
+     * @param command 本次客户端发起的命令类型
+     * @param args  commandHandler执行任务需要的参数
+     */
     void handle(Channel channel, Command command, String... args);
 }

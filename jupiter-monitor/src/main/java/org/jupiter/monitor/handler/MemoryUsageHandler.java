@@ -28,6 +28,7 @@ import org.jupiter.monitor.Command;
  * Jupiter
  * org.jupiter.monitor.handler
  *
+ * 返回监控中心当前的内存使用率  这样说来实际上哪个机器都可以部署监控中心 这样就可以监控机器当前的内存使用率 栈信息 之类的
  * @author jiachun.fjc
  */
 public class MemoryUsageHandler implements CommandHandler {

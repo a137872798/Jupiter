@@ -25,10 +25,14 @@ import org.jupiter.common.util.ThrowUtil;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * 该对象的remove 方法很简单(通过约定下标，时间复杂度为(O))，且不容易发生内存泄露。 而普通的threadLocal 是延迟remove 容易发生内存泄露
  * @author jiachun.fjc
  */
 public class InternalThreadLocal<V> {
 
+    /**
+     * 该值是一个定死的值 本下标会存放一个set对象， 内部维护了所有需要移除的 ThreadLocal
+     */
     private static final int variablesToRemoveIndex = InternalThreadLocalMap.nextVariableIndex();
 
     /**
@@ -46,12 +50,14 @@ public class InternalThreadLocal<V> {
         try {
             Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
             if (v != null && v != InternalThreadLocalMap.UNSET) {
+                // 代表没有需要被移除的元素
                 Set<InternalThreadLocal<?>> variablesToRemove = (Set<InternalThreadLocal<?>>) v;
                 for (InternalThreadLocal<?> tlv : variablesToRemove) {
                     tlv.remove(threadLocalMap);
                 }
             }
         } finally {
+            // 将 thread.threadLocalMap 引用清除 这样自动被GC 回收
             InternalThreadLocalMap.remove();
         }
     }
@@ -72,12 +78,20 @@ public class InternalThreadLocal<V> {
         InternalThreadLocalMap.destroy();
     }
 
+    /**
+     * 添加到待移除的槽中， 这里是为了避免内存泄露
+     * @param threadLocalMap
+     * @param variable
+     */
     @SuppressWarnings("unchecked")
     private static void addToVariablesToRemove(InternalThreadLocalMap threadLocalMap, InternalThreadLocal<?> variable) {
+
+        // 将某个本地变量 添加到待移除的set中
         Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
         Set<InternalThreadLocal<?>> variablesToRemove;
         if (v == InternalThreadLocalMap.UNSET || v == null) {
             variablesToRemove = Collections.newSetFromMap(new IdentityHashMap<>());
+            // 在对应的偏移量设置set
             threadLocalMap.setIndexedVariable(variablesToRemoveIndex, variablesToRemove);
         } else {
             variablesToRemove = (Set<InternalThreadLocal<?>>) v;
@@ -101,6 +115,9 @@ public class InternalThreadLocal<V> {
 
     private final int index;
 
+    /**
+     * 每个本地变量有自己在map中的偏移量
+     */
     public InternalThreadLocal() {
         index = InternalThreadLocalMap.nextVariableIndex();
     }
@@ -157,6 +174,8 @@ public class InternalThreadLocal<V> {
      * Sets the value to uninitialized for the specified thread local map;
      * a proceeding call to get() will trigger a call to initialValue().
      * The specified thread local map must be for the current thread.
+     * 将本对象从 map 中移除  ThreadLocal 的模型是 每个线程包含一个 ThreadLocalMap 对象 而每个ThreadLocal自身会作为key ， value 为它维护的值，
+     * 该组键值对 会保存到map中
      */
     @SuppressWarnings("unchecked")
     public final void remove(InternalThreadLocalMap threadLocalMap) {
@@ -165,10 +184,12 @@ public class InternalThreadLocal<V> {
         }
 
         Object v = threadLocalMap.removeIndexedVariable(index);
+        // 可以从 待移除的 set 中remove
         removeFromVariablesToRemove(threadLocalMap, this);
 
         if (v != InternalThreadLocalMap.UNSET) {
             try {
+                // 钩子
                 onRemoval((V) v);
             } catch (Exception e) {
                 ThrowUtil.throwException(e);

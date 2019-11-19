@@ -18,7 +18,7 @@ package org.jupiter.common.util.internal;
 import java.lang.reflect.Field;
 
 /**
- *
+ * 基于反射对字段进行更新和获取
  * @author jiachun.fjc
  */
 final class ReflectionIntegerFieldUpdater<U> implements IntegerFieldUpdater<U> {

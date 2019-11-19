@@ -19,6 +19,7 @@ package org.jupiter.common.util;
  * A singleton which is safe to compare via the {@code ==} operator. Created and managed by {@link ConstantPool}.
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 每个常量有自己的id 和名称 id是唯一标识 而name 可能会重复
  */
 public interface Constant<T extends Constant<T>> extends Comparable<T> {
 

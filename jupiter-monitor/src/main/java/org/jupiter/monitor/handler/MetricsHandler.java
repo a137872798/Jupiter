@@ -25,12 +25,14 @@ import org.jupiter.monitor.metric.MetricsReporter;
  * jupiter
  * org.jupiter.monitor.handler
  *
+ * 获取统计相关的信息
  * @author jiachun.fjc
  */
 public class MetricsHandler implements CommandHandler {
 
     @Override
     public void handle(Channel channel, Command command, String... args) {
+        // 确保通过权限校验
         if (AuthHandler.checkAuth(channel)) {
             if (args.length < 2) {
                 channel.writeAndFlush("Need second arg!" + JConstants.NEWLINE);
@@ -40,6 +42,7 @@ public class MetricsHandler implements CommandHandler {
             Command.ChildCommand child = command.parseChild(args[1]);
             if (child != null) {
                 if (child == Command.ChildCommand.REPORT) {
+                    // 将报告信息返回
                     channel.writeAndFlush(MetricsReporter.report());
                 }
             } else {

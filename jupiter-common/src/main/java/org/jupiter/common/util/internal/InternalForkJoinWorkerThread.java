@@ -26,6 +26,9 @@ import java.util.concurrent.ForkJoinWorkerThread;
  */
 public class InternalForkJoinWorkerThread extends ForkJoinWorkerThread {
 
+    /**
+     * 为forkJoin 线程增加了高性能本地线程变量
+     */
     private InternalThreadLocalMap threadLocalMap;
 
     public InternalForkJoinWorkerThread(ForkJoinPool pool) {

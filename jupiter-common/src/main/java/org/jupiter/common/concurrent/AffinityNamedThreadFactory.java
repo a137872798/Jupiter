@@ -36,7 +36,7 @@ import static org.jupiter.common.util.Requires.requireNotNull;
  *
  * Jupiter
  * org.jupiter.common.concurrent
- * 名字亲和的线程工厂  TODO 该类明天看
+ * 该线程工厂能将生成的线程绑定在某一内核  就看做一个普通的优化线程工厂
  * @author jiachun.fjc
  */
 public class AffinityNamedThreadFactory implements ThreadFactory {

@@ -34,6 +34,11 @@ class FormattingTuple {
         this.throwable = throwable;
     }
 
+    /**
+     * 裁剪，减少最后一个元素
+     * @param argArray
+     * @return
+     */
     static Object[] trimmedCopy(Object[] argArray) {
         if (argArray == null || argArray.length == 0) {
             throw new IllegalStateException("Empty or null argument array");

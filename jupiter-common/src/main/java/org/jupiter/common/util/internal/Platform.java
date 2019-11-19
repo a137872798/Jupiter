@@ -25,6 +25,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * 用于获取当前平台信息
  * @author jiachun.fjc
  */
 public class Platform {

@@ -25,6 +25,7 @@ import org.jupiter.registry.RegistryMonitor;
  * jupiter
  * org.jupiter.monitor.handler
  *
+ * 通过指定地址的方式查询某个服务器上能提供的所有服务
  * @author jiachun.fjc
  */
 public class ByAddressHandler extends ChildCommandHandler<RegistryHandler> {
@@ -45,6 +46,7 @@ public class ByAddressHandler extends ChildCommandHandler<RegistryHandler> {
             childGrep = command.parseChild(args[4]);
         }
 
+        // 查找某个指定地址的服务器上提供哪些服务
         for (String a : monitor.listServicesByAddress(args[2], Integer.parseInt(args[3]))) {
             if (childGrep == Command.ChildCommand.GREP) {
                 if (a.contains(args[5])) {

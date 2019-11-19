@@ -20,11 +20,16 @@ package org.jupiter.common.util;
  * {@link Signal} has an empty stack trace and has no cause to save the instantiation overhead.
  *
  * Forked from <a href="https://github.com/netty/netty">Netty</a>.
+ * 信号对象
  */
 public final class Signal extends Exception implements Constant<Signal> {
 
     private static final long serialVersionUID = -221145131122459977L;
 
+    /**
+     * 该对象内部包含一个常量池 每个signal 对象通过指定name 设置到pool中 并根据static修饰符保证长生命周期
+     * SignalConstant本身不能被实例化 必须配合pool.valueOf 延迟生成
+     */
     private static final ConstantPool<Signal> pool = new ConstantPool<Signal>() {
 
         @Override
@@ -35,6 +40,7 @@ public final class Signal extends Exception implements Constant<Signal> {
 
     /**
      * Returns the {@link Signal} of the specified name.
+     * 从常量池中查询数据
      */
     public static Signal valueOf(String name) {
         return pool.valueOf(name);
@@ -42,6 +48,7 @@ public final class Signal extends Exception implements Constant<Signal> {
 
     /**
      * Shortcut of {@link #valueOf(String) valueOf(firstNameComponent.getName() + "#" + secondNameComponent)}.
+     * 格式化名称后查询
      */
     public static Signal valueOf(Class<?> firstNameComponent, String secondNameComponent) {
         return pool.valueOf(firstNameComponent, secondNameComponent);

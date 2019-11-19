@@ -21,6 +21,7 @@ import org.jupiter.common.util.Requires;
  * jupiter
  * org.jupiter.common.util.internal
  *
+ * 该runnable 对象会在执行完成后自动清除本线程关联的所有线程变量
  * @author jiachun.fjc
  */
 public class InternalThreadLocalRunnable implements Runnable {

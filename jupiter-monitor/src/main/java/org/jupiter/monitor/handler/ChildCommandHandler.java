@@ -19,10 +19,14 @@ package org.jupiter.monitor.handler;
  * jupiter
  * org.jupiter.monitor.handler
  *
+ * 子命令处理器
  * @author jiachun.fjc
  */
 public abstract class ChildCommandHandler<T extends CommandHandler> implements CommandHandler {
 
+    /**
+     * 对应的父命令处理器
+     */
     private volatile T parent;
 
     public T getParent() {

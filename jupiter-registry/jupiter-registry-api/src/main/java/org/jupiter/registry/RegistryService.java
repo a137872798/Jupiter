@@ -26,50 +26,62 @@ import org.jupiter.registry.RegisterMeta.ServiceMeta;
  * jupiter
  * org.jupiter.registry
  *
+ * 注册中心
  * @author jiachun.fjc
  */
 public interface RegistryService extends Registry {
 
     /**
      * Register service to registry server.
+     * 具备将某个元数据信息注册到注册中心上
      */
     void register(RegisterMeta meta);
 
     /**
      * Unregister service to registry server.
+     * 注销某个服务
      */
     void unregister(RegisterMeta meta);
 
     /**
      * Subscribe a service from registry server.
+     * 订阅某个服务
      */
     void subscribe(RegisterMeta.ServiceMeta serviceMeta, NotifyListener listener);
 
     /**
      * Find a service in the local scope.
+     * 查询一组服务信息
      */
     Collection<RegisterMeta> lookup(RegisterMeta.ServiceMeta serviceMeta);
 
     /**
      * List all consumer's info.
+     * 返回所有消费者
      */
     Map<ServiceMeta, Integer> consumers();
 
     /**
      * List all provider's info.
+     * 返回所有提供者
      */
     Map<RegisterMeta, RegisterState> providers();
 
     /**
      * Returns {@code true} if {@link RegistryService} is shutdown.
+     * 判断当前注册中心是否关闭
      */
     boolean isShutdown();
 
     /**
      * Shutdown.
+     * 优雅关闭
      */
     void shutdownGracefully();
 
+    /**
+     * 注册中心类型  zk/ 单机环境的default
+     */
     enum RegistryType {
         DEFAULT("default"),
         ZOOKEEPER("zookeeper");
@@ -94,8 +106,17 @@ public interface RegistryService extends Registry {
         }
     }
 
+    /**
+     * 注册状态
+     */
     enum RegisterState {
+        /**
+         * 准备阶段
+         */
         PREPARE,
+        /**
+         * 已完成注册
+         */
         DONE
     }
 }

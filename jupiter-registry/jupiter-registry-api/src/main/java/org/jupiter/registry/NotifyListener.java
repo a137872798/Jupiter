@@ -25,8 +25,16 @@ package org.jupiter.registry;
  */
 public interface NotifyListener {
 
+    /**
+     * 通知到某个注册者
+     * @param registerMeta
+     * @param event
+     */
     void notify(RegisterMeta registerMeta, NotifyEvent event);
 
+    /**
+     * 注册中心的事件监听对象 每当某个 添加/删除服务提供者
+     */
     enum NotifyEvent {
         CHILD_ADDED,
         CHILD_REMOVED

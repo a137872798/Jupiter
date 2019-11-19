@@ -24,6 +24,7 @@ import org.jupiter.monitor.Command;
  * jupiter
  * org.jupiter.monitor.handler
  *
+ * 接受 help 命令 并返回帮助信息
  * @author jiachun.fjc
  */
 public class HelpHandler implements CommandHandler {
@@ -33,6 +34,7 @@ public class HelpHandler implements CommandHandler {
         StringBuilder buf = new StringBuilder();
         buf.append("-- Help ------------------------------------------------------------------------")
                 .append(JConstants.NEWLINE);
+        // 返回所有可用的命令
         for (Command parent : Command.values()) {
             buf.append(String.format("%1$-32s", parent.name().toLowerCase()))
                     .append(parent.description())

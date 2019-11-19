@@ -37,9 +37,11 @@ import org.jupiter.monitor.handler.RegistryHandler;
  * jupiter
  * org.jupiter.monitor
  *
+ * 监控模块的命令
  * @author jiachun.fjc
  */
 public enum Command {
+    // 这里定义了命令的描述信息以及对应的处理器
     AUTH("Login with password", new AuthHandler()),
     HELP("Help information", new HelpHandler()),
     STACK("Prints java stack traces of java threads for the current java process", new JStackHandler()),
@@ -56,8 +58,17 @@ public enum Command {
             ChildCommand.GREP),
     QUIT("Quit monitor", new QuitHandler());
 
+    /**
+     * 描述信息
+     */
     private final String description;
+    /**
+     * 对应的命令处理器
+     */
     private final CommandHandler handler;
+    /**
+     * 每个命令 可能会包含一些子命令  比如 ADDRESS 命令依赖于 REGISTRY 命令
+     */
     private final ChildCommand[] children;
 
     Command(String description, CommandHandler handler, ChildCommand... children) {
@@ -78,6 +89,11 @@ public enum Command {
         return children;
     }
 
+    /**
+     * 查找该command 下 指定的childCommand
+     * @param childName
+     * @return
+     */
     public ChildCommand parseChild(String childName) {
         if (childName.indexOf('-') == 0) {
             childName = childName.substring(1);
@@ -90,10 +106,18 @@ public enum Command {
         return null;
     }
 
+    /**
+     * 通过名字查找对应的命令
+     * @param name
+     * @return
+     */
     public static Command parse(String name) {
         return commands.get(name.toLowerCase());
     }
 
+    /**
+     * 缓存了所有 command  key 是 Command.name()
+     */
     private static final Map<String, Command> commands = Maps.newHashMap();
 
     static {

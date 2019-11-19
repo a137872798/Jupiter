@@ -27,6 +27,7 @@ import org.jupiter.registry.RegistryMonitor;
  * jupiter
  * org.jupiter.monitor.handler
  *
+ * 该服务器接受 查询地址信息的命令  继承ChildCommandHandler 代表该命令是依托于父命令的
  * @author jiachun.fjc
  */
 public class AddressHandler extends ChildCommandHandler<RegistryHandler> {
@@ -38,6 +39,7 @@ public class AddressHandler extends ChildCommandHandler<RegistryHandler> {
             return;
         }
 
+        // 获取第三个参数并解析成 ChildCommand
         Command.ChildCommand target = command.parseChild(args[2]);
         if (target == null) {
             channel.writeAndFlush("Wrong args denied!" + JConstants.NEWLINE);
@@ -46,10 +48,12 @@ public class AddressHandler extends ChildCommandHandler<RegistryHandler> {
 
         List<String> addresses;
         switch (target) {
+            // 如果是尝试获取所有服务提供者地址
             case P:
                 addresses = monitor.listPublisherHosts();
 
                 break;
+            // 获取所有订阅者地址
             case S:
                 addresses = monitor.listSubscriberAddresses();
 
@@ -59,10 +63,12 @@ public class AddressHandler extends ChildCommandHandler<RegistryHandler> {
         }
         Command.ChildCommand childGrep = null;
         if (args.length >= 5) {
+            // 如果携带正则信息
             childGrep = command.parseChild(args[3]);
         }
         for (String a : addresses) {
             if (childGrep == Command.ChildCommand.GREP) {
+                // 必须携带信息才能返回
                 if (a.contains(args[4])) {
                     channel.writeAndFlush(a + JConstants.NEWLINE);
                 }

@@ -23,28 +23,33 @@ import java.util.List;
  * jupiter
  * org.jupiter.registry
  *
+ * 注册中心开放出来的用于监控用 api
  * @author jiachun.fjc
  */
 public interface RegistryMonitor {
 
     /**
      * Returns the address list of publisher.
+     * 返回当前所有的服务提供者
      */
     List<String> listPublisherHosts();
 
     /**
      * Returns the address list of subscriber.
+     * 返回当前所有的服务订阅者
      */
     List<String> listSubscriberAddresses();
 
     /**
      * Returns to the service of all the specified service provider's address.
+     * 获取具备提供某个服务的所有服务地址
      */
     List<String> listAddressesByService(String group, String serviceProviderName, String version);
 
     /**
      * Finds the address(host, port) of the corresponding node and returns all
      * the service names it provides.
+     * 返回指定地址能提供的所有服务
      */
     List<String> listServicesByAddress(String host, int port);
 }
