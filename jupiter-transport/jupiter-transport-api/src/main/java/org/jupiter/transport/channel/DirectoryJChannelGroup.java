@@ -31,14 +31,18 @@ import org.jupiter.transport.Directory;
 public class DirectoryJChannelGroup {
 
     // key: 服务标识; value: 提供服务的节点列表(group list)
+    // key 应该就是服务三元组  Directory返回的字符串  而groupList 代表连接到对应服务端点的所有channelGroup
     private final ConcurrentMap<String, CopyOnWriteGroupList> groups = Maps.newConcurrentMap();
-    // 对应服务节点(group)的引用计数
+    // 对应服务节点(group)的引用计数   GroupRefCounterMap 实质上就是一个ConcurrentHashMap key 为ChannelGroup value为 ref
     private final GroupRefCounterMap groupRefCounter = new GroupRefCounterMap();
 
     public CopyOnWriteGroupList find(Directory directory) {
+        // 生成三元组字符串
         String _directory = directory.directoryString();
+        // 返回连接到该服务的 所有 Group ==> List<Group>
         CopyOnWriteGroupList groupList = groups.get(_directory);
         if (groupList == null) {
+            // 不存在的话创建一个新对象
             CopyOnWriteGroupList newGroupList = new CopyOnWriteGroupList(this);
             groupList = groups.putIfAbsent(_directory, newGroupList);
             if (groupList == null) {
@@ -82,6 +86,9 @@ public class DirectoryJChannelGroup {
         return count;
     }
 
+    /**
+     * 对应某一ChannelGroup 的引用计数
+     */
     static class GroupRefCounterMap extends ConcurrentHashMap<JChannelGroup, AtomicInteger> {
 
         private static final long serialVersionUID = 6590976614405397299L;

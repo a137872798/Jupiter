@@ -28,12 +28,16 @@ import org.jupiter.common.util.ConstantPool;
  * jupiter
  * org.jupiter.transport
  *
+ * 传输层配置项
  * @param <T> the type of the value which is valid for the {@link JOption}
  * @author jiachun.fjc
  */
 @SuppressWarnings("all")
 public final class JOption<T> extends AbstractConstant<JOption<T>> {
 
+    /**
+     * 这个常量池实际上就是 将一组相关的配置 通过 concurrentMap 存储起来了
+     */
     private static final ConstantPool<JOption<Object>> pool = new ConstantPool<JOption<Object>>() {
 
         @Override
@@ -72,7 +76,9 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
     }
 
     /**
-     * 对此连接禁用Nagle算法.
+     * 对此连接禁用Nagle算法.    Nagle 即是为了避免在发送端数据发送过慢 ， 比如每产生一个字节就会发送一个数据包 可是在TCP 报文中
+     * 固定的部分占了很大的比重比如40 字节 这样就有很多的浪费 所以诞生了Nagle算法 用于强制发送端发送较大的数据(等待小数据队列) 但是这样数据就会有延时
+     * 这里的 No_Delay 就是要禁用该算法
      */
     public static final JOption<Boolean> TCP_NODELAY = valueOf("TCP_NODELAY");
 

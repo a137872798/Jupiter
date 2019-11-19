@@ -20,17 +20,26 @@ package org.jupiter.transport;
  *
  * jupiter
  * org.jupiter.transport
- *
+ * 未解析的地址对象
  * @author jiachun.fjc
  */
 public interface UnresolvedAddress {
 
+    /**
+     * 解析获取地址主机
+     * @return
+     */
     String getHost();
 
+    /**
+     * 解析获取端口号
+     * @return
+     */
     int getPort();
 
     /**
      * For unix domain socket.
+     * 针对 unix  忽略
      */
     String getPath();
 }

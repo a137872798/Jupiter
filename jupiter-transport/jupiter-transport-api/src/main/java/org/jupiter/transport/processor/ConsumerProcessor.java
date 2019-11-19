@@ -23,11 +23,17 @@ import org.jupiter.transport.payload.JResponsePayload;
  *
  * jupiter
  * org.jupiter.transport.processor
- *
+ * 消费者端的处理器
  * @author jiachun.fjc
  */
 public interface ConsumerProcessor {
 
+    /**
+     * 处理响应结果
+     * @param channel
+     * @param response
+     * @throws Exception
+     */
     void handleResponse(JChannel channel, JResponsePayload response) throws Exception;
 
     void shutdown();

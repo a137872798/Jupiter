@@ -19,6 +19,7 @@ package org.jupiter.transport.exception;
  * jupiter
  * org.jupiter.transport.exception
  *
+ * 连接失败异常
  * @author jiachun.fjc
  */
 public class ConnectFailedException extends RuntimeException {

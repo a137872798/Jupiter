@@ -54,6 +54,7 @@ import static org.jupiter.common.util.StackTraceUtil.stackTrace;
  * jupiter
  * org.jupiter.registry.zookeeper
  *
+ * 基于ZK的注册中心
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "zookeeper")

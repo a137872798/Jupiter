@@ -20,6 +20,7 @@ package org.jupiter.transport;
  * jupiter
  * org.jupiter.transport
  *
+ * 传输层基接口
  * @author jiachun.fjc
  */
 public interface Transporter {

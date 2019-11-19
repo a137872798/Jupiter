@@ -25,6 +25,10 @@ import org.jupiter.common.util.JConstants;
  */
 public final class CodecConfig {
 
+    /**
+     * 是否是low_copy
+     * @return
+     */
     public static boolean isCodecLowCopy() {
         return JConstants.CODEC_LOW_COPY;
     }

@@ -22,7 +22,7 @@ import org.jupiter.common.util.LongSequence;
  *
  * jupiter
  * org.jupiter.transport.payload
- *
+ * 请求消息体载体
  * @author jiachun.fjc
  */
 public class JRequestPayload extends PayloadHolder {
@@ -41,6 +41,7 @@ public class JRequestPayload extends PayloadHolder {
     // jupiter-transport层会在协议解析完成后打上一个时间戳, 用于后续监控对该请求的处理时间
     private transient long timestamp;
 
+    // 初始化时 会从sequence 中获取一个唯一标识作为 invokeId
     public JRequestPayload() {
         this(sequence.next());
     }

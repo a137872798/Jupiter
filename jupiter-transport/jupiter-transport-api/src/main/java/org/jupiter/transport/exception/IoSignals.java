@@ -29,6 +29,8 @@ import org.jupiter.common.util.Signal;
  */
 public class IoSignals {
 
+    // 以下对象会被添加到常量池中 常量池就是一个 ConcurrentHashMap 对象
+
     /** 错误的MAGIC */
     public static final Signal ILLEGAL_MAGIC    = Signal.valueOf(IoSignals.class, "ILLEGAL_MAGIC");
     /** 错误的消息标志位 */

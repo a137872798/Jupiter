@@ -22,7 +22,7 @@ import java.util.EventListener;
  *
  * jupiter
  * org.jupiter.transport.channel
- *
+ * 监听器对象  当channel之后完某个动作后 根据结果触发对应的函数
  * @author jiachun.fjc
  */
 public interface JFutureListener<C> extends EventListener {

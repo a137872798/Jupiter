@@ -27,6 +27,7 @@ import org.jupiter.transport.processor.ProviderProcessor;
  * jupiter
  * org.jupiter.transport
  *
+ * 作为服务端接受请求的对象
  * @author jiachun.fjc
  */
 public interface JAcceptor extends Transporter {
@@ -43,6 +44,7 @@ public interface JAcceptor extends Transporter {
 
     /**
      * Acceptor options [parent, child].
+     * 配置组
      */
     JConfigGroup configGroup();
 
@@ -53,6 +55,7 @@ public interface JAcceptor extends Transporter {
 
     /**
      * Binds the rpc processor.
+     * 注册处理器
      */
     void withProcessor(ProviderProcessor processor);
 

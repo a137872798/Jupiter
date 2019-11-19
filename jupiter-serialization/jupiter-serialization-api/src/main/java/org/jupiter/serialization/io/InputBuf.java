@@ -21,35 +21,40 @@ import java.nio.ByteBuffer;
 /**
  * jupiter
  * org.jupiter.serialization.io
- *
+ * 一个输入流 buf
  * @author jiachun.fjc
  */
 public interface InputBuf {
 
     /**
      * Exposes this backing data's readable bytes as an {@link InputStream}.
+     * 转换成输入流对象
      */
     InputStream inputStream();
 
     /**
      * Exposes this backing data's readable bytes as a NIO {@link ByteBuffer}.
+     * 将数据以 bytebuffer 的形式返回
      */
     ByteBuffer nioByteBuffer();
 
     /**
      * Returns the number of readable bytes.
+     * 返回该输入流中可读的数据量
      */
     int size();
 
     /**
      * Returns {@code true} if and only if this buf has a reference to the low-level memory address that points
      * to the backing data.
+     * 返回内存地址
      */
     boolean hasMemoryAddress();
 
     /**
      * Decreases the reference count by {@code 1} and deallocates this object if the reference count reaches at
      * {@code 0}.
+     * 减少 对应buffer 的引用计数
      */
     boolean release();
 }

@@ -27,43 +27,50 @@ import org.jupiter.transport.UnresolvedAddress;
  *
  * jupiter
  * org.jupiter.transport.channel
- *
+ * 该group内部的所有channel.remoteAddress() 是一样的那么为什么要建立这么多channel呢 不是增加开销吗???
  * @author jiachun.fjc
  */
 public interface JChannelGroup {
 
     /**
      * Returns the remote address of this group.
+     * 返回远端地址 注意返回类型是 UnresolvedAddress
      */
     UnresolvedAddress remoteAddress();
 
     /**
      * Returns the next {@link JChannel} in the group.
+     * 获取 group 中下一个channel 看来针对某个地址的请求还是通过负载给多个channel来执行的
      */
     JChannel next();
 
     /**
      * Returns all {@link JChannel}s in the group.
+     * 返回本组下所有的channel
      */
     List<? extends JChannel> channels();
 
     /**
      * Returns true if this group contains no {@link JChannel}.
+     * 该group 下是否无channel
      */
     boolean isEmpty();
 
     /**
      * Adds the specified {@link JChannel} to this group.
+     * 将某个channel 添加到组中
      */
     boolean add(JChannel channel);
 
     /**
      * Removes the specified {@link JChannel} from this group.
+     * 从group 中移除某个channel
      */
     boolean remove(JChannel channel);
 
     /**
      * Returns the number of {@link JChannel}s in this group (its cardinality).
+     * 返回该组中channel 数量
      */
     int size();
 
@@ -105,6 +112,7 @@ public interface JChannelGroup {
 
     /**
      * Gets weight of service.
+     * 获得某一服务的权重  Directory 不仅携带了服务名 还有版本号 和 组别
      */
     int getWeight(Directory directory);
 
@@ -120,6 +128,7 @@ public interface JChannelGroup {
 
     /**
      * Warm-up time.
+     * 返回预热时间
      */
     int getWarmUp();
 
@@ -130,11 +139,13 @@ public interface JChannelGroup {
 
     /**
      * Returns {@code true} if warm up to complete.
+     * 是否完成预热
      */
     boolean isWarmUpComplete();
 
     /**
      * Time of birth.
+     * 该group的创建时间
      */
     long timestamp();
 

@@ -95,13 +95,20 @@ public class LongSequence extends LongRhsPadding {
 
     private final class LocalSequence {
 
+        /**
+         * 该对象是基于线程进行分配的 每个线程预先划分出一块区域  并在内部分配id  当超出范围时 重新回到起点
+         * 每个 LongSequence 对象都是全局范围的 ， 内部包含的LocalSequence 对象根据线程来划分块， 并在块内单调递增分配id
+         * 每当某个线程 不够分配时 就从 LongSequence 中的value 通过原子更新 后 获取一个新的块
+         */
         private long localBase = getNextBaseValue();
         private long localValue = 0;
 
         public long next() {
             long realVal = ++localValue + localBase;
 
+            // 当某个线程分配的数量 达到一个步长时
             if (localValue == step) {
+                // 更新基数
                 localBase = getNextBaseValue();
                 localValue = 0;
             }

@@ -25,6 +25,9 @@ package org.jupiter.transport;
  */
 public class Acknowledge {
 
+    /**
+     * 该标记应该是匹配请求的序号 这样才知道是针对哪个请求的ack
+     */
     private final long sequence; // ACK序号
 
     public Acknowledge(long sequence) {

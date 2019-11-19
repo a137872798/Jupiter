@@ -32,14 +32,27 @@ import org.jupiter.serialization.io.OutputBuf;
  * jupiter
  * org.jupiter.transport.payload
  *
+ * 在传输层的数据载体
  * @author jiachun.fjc
  */
 public abstract class PayloadHolder {
 
+    /**
+     * 采用的序列化方式
+     */
     private byte serializerCode;
 
+    /**
+     * 以byte[] 作为基本数据的载体 如果要使用 需要进行反序列化
+     */
     private byte[] bytes;
+    /**
+     * 输入流缓冲区
+     */
     private InputBuf inputBuf;
+    /**
+     * 输出流缓冲区
+     */
     private OutputBuf outputBuf;
 
     public byte serializerCode() {
@@ -50,6 +63,11 @@ public abstract class PayloadHolder {
         return bytes;
     }
 
+    /**
+     * 指定序列化方式 和 数据体
+     * @param serializerCode
+     * @param bytes
+     */
     public void bytes(byte serializerCode, byte[] bytes) {
         this.serializerCode = serializerCode;
         this.bytes = bytes;

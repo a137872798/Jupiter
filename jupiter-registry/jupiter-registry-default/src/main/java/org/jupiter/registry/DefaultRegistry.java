@@ -70,7 +70,7 @@ import org.jupiter.transport.netty.handler.connector.ConnectorIdleStateTrigger;
  *
  * jupiter
  * org.jupiter.registry
- *
+ * TODO 先看传输模块 因为 监控中心和注册中心都依赖了该模块
  * @author jiachun.fjc
  */
 public final class DefaultRegistry extends NettyTcpConnector {

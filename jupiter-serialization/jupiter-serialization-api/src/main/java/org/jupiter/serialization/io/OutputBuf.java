@@ -22,12 +22,14 @@ import java.nio.ByteBuffer;
  * jupiter
  * org.jupiter.serialization.io
  *
+ * 输出流缓冲区
  * @author jiachun.fjc
  */
 public interface OutputBuf {
 
     /**
      * Exposes this backing data as an {@link OutputStream}.
+     * 将数据以输出流的形式暴露出来
      */
     OutputStream outputStream();
 

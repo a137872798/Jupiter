@@ -15,10 +15,7 @@
  */
 package org.jupiter.transport.channel;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jupiter.common.util.internal.UnsafeUtil;
@@ -26,21 +23,27 @@ import org.jupiter.common.util.internal.UnsafeUtil;
 /**
  * 相同服务, 不同服务节点的channel group容器,
  * 线程安全(写时复制), 实现原理类似 {@link java.util.concurrent.CopyOnWriteArrayList}.
- *
+ * <p>
  * update操作仅支持addIfAbsent/remove, update操作会同时更新对应服务节点(group)的引用计数.
- *
+ * <p>
  * jupiter
  * org.jupiter.transport.channel
+ * <p>
+ * 该对象内部管理多个 channelGroup
  *
  * @author jiachun.fjc
  */
 public class CopyOnWriteGroupList {
 
+    /**
+     * 看来这些group 的 服务都是相同的 不过地址不同 而每个地址又分别有很多channel
+     */
     private static final JChannelGroup[] EMPTY_GROUP = new JChannelGroup[0];
-    private static final Object[] EMPTY_ARRAY = new Object[] { EMPTY_GROUP, null };
+    private static final Object[] EMPTY_ARRAY = new Object[]{EMPTY_GROUP, null};
 
     private transient final ReentrantLock lock = new ReentrantLock();
 
+    // 该对象内部维护了 多个 directory 与 CopyOnWriteGroupList 的关系
     private final DirectoryJChannelGroup parent;
 
     // array[0]: JChannelGroup[]
@@ -49,31 +52,53 @@ public class CopyOnWriteGroupList {
 
     public CopyOnWriteGroupList(DirectoryJChannelGroup parent) {
         this.parent = parent;
+        // 初始状态 array 是默认值
         setArray(EMPTY_ARRAY);
     }
 
     public final JChannelGroup[] getSnapshot() {
+        // 通过Unsafe获取数组对应的值  (底层具备跟volatile 相同能力的读取)
         return tabAt0(array);
     }
 
+    /**
+     * 获取快照对应的 权重数组
+     *
+     * @param snapshot
+     * @param directory
+     * @return
+     */
     public final Object getWeightArray(JChannelGroup[] snapshot, String directory) {
-        Object[] array = this.array; // data snapshot
+        Object[] array = this.array; // data snapshot  写时拷贝
+        // 这里不是严格同步的  前面的判断条件和后面不是原子操作
         return tabAt0(array) != snapshot
-                ? null
+                ? null  // 如果已经发生了变化 返回null
                 : (tabAt1(array) == null ? null : tabAt1(array).get(directory));
     }
 
+    /**
+     * 设置权重数组
+     *
+     * @param snapshot    需要有快照信息 确保当前数据没有变化
+     * @param directory
+     * @param weightArray
+     * @return
+     */
     public final boolean setWeightArray(JChannelGroup[] snapshot, String directory, Object weightArray) {
+        // 如果快照发生变化 设置失败
         if (weightArray == null || snapshot != tabAt0(array)) {
             return false;
         }
         final ReentrantLock lock = this.lock;
+        // 在锁中保证线程安全
         boolean locked = lock.tryLock();
         if (locked) { // give up if there is competition
             try {
+                // 双重检查 数据发生变化返回false
                 if (snapshot != tabAt0(array)) {
                     return false;
                 }
+                // 设置权重
                 setWeightArray(directory, weightArray);
                 return true;
             } finally {
@@ -90,10 +115,17 @@ public class CopyOnWriteGroupList {
 
     @SuppressWarnings("SameParameterValue")
     private void setArray(JChannelGroup[] groups, Object weightArray) {
-        array = new Object[] { groups, weightArray };
+        array = new Object[]{groups, weightArray};
     }
 
+    /**
+     * 设置权重
+     *
+     * @param directory
+     * @param weightArray
+     */
     private void setWeightArray(String directory, Object weightArray) {
+        // 数组的第一个元素 是一个map key 对应 服务三元组格式化后的字符串 value 代表对应的权重
         Map<String, Object> weightsMap = tabAt1(array);
         if (weightsMap == null) {
             weightsMap = new HashMap<>();
@@ -167,28 +199,31 @@ public class CopyOnWriteGroupList {
         try {
             JChannelGroup[] current = tabAt0(array);
             int len = current.length;
-            if (snapshot != current) findIndex: {
-                int prefix = Math.min(index, len);
-                for (int i = 0; i < prefix; i++) {
-                    if (current[i] != snapshot[i] && eq(o, current[i])) {
-                        index = i;
+            if (snapshot != current)
+                findIndex:{
+                    int prefix = Math.min(index, len);
+                    for (int i = 0; i < prefix; i++) {
+                        // 从current 中找到与o一样的 这时就返回 要被移除的下标 方便之后的数组数据迁移
+                        if (current[i] != snapshot[i] && eq(o, current[i])) {
+                            index = i;
+                            break findIndex;
+                        }
+                    }
+                    if (index >= len) {
+                        return false;
+                    }
+                    if (current[index] == o) {
                         break findIndex;
                     }
+                    index = indexOf(o, current, index, len);
+                    if (index < 0) {
+                        return false;
+                    }
                 }
-                if (index >= len) {
-                    return false;
-                }
-                if (current[index] == o) {
-                    break findIndex;
-                }
-                index = indexOf(o, current, index, len);
-                if (index < 0) {
-                    return false;
-                }
-            }
             JChannelGroup[] newElements = new JChannelGroup[len - 1];
             System.arraycopy(current, 0, newElements, 0, index);
             System.arraycopy(current, index + 1, newElements, index, len - index - 1);
+            // 这里清空了权重
             setArray(newElements, null);
             parent.decrementRefCount(o); // reference count -1
             return true;

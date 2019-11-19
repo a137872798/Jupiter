@@ -21,6 +21,7 @@ package org.jupiter.transport.payload;
  * jupiter
  * org.jupiter.transport.payload
  *
+ * 关于响应体的数据载体
  * @author jiachun.fjc
  */
 public class JResponsePayload extends PayloadHolder {

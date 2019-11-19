@@ -33,7 +33,13 @@ public class ConfigWithVersion<T> {
 
     private ConfigWithVersion() {}
 
+    /**
+     * 该配置对应的版本号
+     */
     private AtomicLong version = new AtomicLong(0);
+    /**
+     * 配置类使用泛型
+     */
     private T config;
 
     public long getVersion() {
