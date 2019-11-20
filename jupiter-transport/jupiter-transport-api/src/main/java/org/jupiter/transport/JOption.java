@@ -96,6 +96,11 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      *      套接字被关闭。
      *
      * 此选项的目的是检测对端主机是否崩溃, 仅对TCP套接字有效.
+     *
+     * TCP 连接本身在没有主动关闭的情况下就是不会自动关闭的  而KEEP_ALIVE 机制类似于一种心跳，他能够在对端处在非正常状态的情况下自动的关闭长连接
+     * 也就是长连接本身不是依靠这个配置来实现的   该配置默认是关闭的  该选项缺点就是增加了网络开销
+     *
+     * 在HTTP 层面 本身每次通信都是短连接 也就是数据一旦发送完自动关闭（这样也会关闭底层TCP连接） 而keep_alive 就使得HTTP层面每次交互后不需要重新建立连接的过程
      */
     public static final JOption<Boolean> KEEP_ALIVE = valueOf("KEEP_ALIVE");
 
@@ -108,6 +113,8 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      *
      * 许多具体的实现中允许一个进程重新使用仍处于2MSL等待的端口(通常是设置选项SO_REUSEADDR),
      * 但TCP不能允许一个新的连接建立在相同的插口对上。
+     *
+     * 用于减少服务器不可用的时间 在 TIME_WAIT 下
      */
     public static final JOption<Boolean> SO_REUSEADDR = valueOf("SO_REUSEADDR");
 
@@ -123,6 +130,11 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      */
     public static final JOption<Integer> SO_RCVBUF = valueOf("SO_RCVBUF");
 
+    /**
+     * SO_LONGER 中包含2个属性 一个是 是否打开 一个是超时时间  未打开 也就是默认情况 在关闭时会将缓冲区数据全部发送完成， 如果设置了超时时间为0 就是抛弃缓冲区数据
+     * 如果是正数 就是阻塞等待指定时间 或者 缓冲区数据全部发送提前退出阻塞
+     * 如果超时时间是0 不会进入 TIME_WAIT 状态 就是强制关闭TCP 连接
+     */
     public static final JOption<Integer> SO_LINGER = valueOf("SO_LINGER");
 
     /**
@@ -156,6 +168,8 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      *
      * 还有一点要注意, 对于TCP连接的ESTABLISHED状态, 并不需要应用层accept,
      * 只要在accept queue里就已经变成状态ESTABLISHED, 所以在使用ss或netstat排查这方面问题不要被ESTABLISHED迷惑.
+     *
+     * 允许最大悬挂的全连接数
      */
     public static final JOption<Integer> SO_BACKLOG = valueOf("SO_BACKLOG");
 
