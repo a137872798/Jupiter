@@ -31,11 +31,13 @@ public interface JConfigGroup {
 
     /**
      * Config for parent.
+     * 对应 boss线程
      */
     JConfig parent();
 
     /**
      * Config for child.
+     * 对应 worker线程
      */
     JConfig child();
 }

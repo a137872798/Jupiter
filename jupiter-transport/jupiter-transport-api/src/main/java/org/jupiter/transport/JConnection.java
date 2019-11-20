@@ -19,10 +19,14 @@ package org.jupiter.transport;
  * jupiter
  * org.jupiter.transport
  *
+ * 连接对象
  * @author jiachun.fjc
  */
 public abstract class JConnection {
 
+    /**
+     * remoteAddress
+     */
     private final UnresolvedAddress address;
 
     public JConnection(UnresolvedAddress address) {
@@ -37,6 +41,10 @@ public abstract class JConnection {
         // the default implementation does nothing
     }
 
+    /**
+     * 设置是否自动重连
+     * @param reconnect
+     */
     public abstract void setReconnect(boolean reconnect);
 
     public interface OperationListener {

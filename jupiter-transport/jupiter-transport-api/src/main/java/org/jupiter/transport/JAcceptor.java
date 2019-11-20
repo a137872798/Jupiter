@@ -33,23 +33,23 @@ import org.jupiter.transport.processor.ProviderProcessor;
 public interface JAcceptor extends Transporter {
 
     /**
-     * Local address.
+     * Local address. 返回本地地址
      */
     SocketAddress localAddress();
 
     /**
-     * Returns bound port.
+     * Returns bound port.    本服务器绑定的端口
      */
     int boundPort();
 
     /**
      * Acceptor options [parent, child].
-     * 配置组
+     * 配置组  返回该服务器相关的配置
      */
     JConfigGroup configGroup();
 
     /**
-     * Returns the rpc processor.
+     * Returns the rpc processor. 返回本服务器上的服务提供者处理器
      */
     ProviderProcessor processor();
 

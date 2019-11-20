@@ -44,10 +44,14 @@ import org.jupiter.transport.netty.handler.connector.ConnectionWatchdog;
  * jupiter
  * org.jupiter.transport.netty.channel
  *
+ * JChannel 实际上是对  netty.channel 的包装
  * @author jiachun.fjc
  */
 public class NettyChannel implements JChannel {
 
+    /**
+     * 也是继承了 ConstantPool 的类 实际上就是有一个 ConcurrentHashMap 维护这些对象
+     */
     private static final AttributeKey<NettyChannel> NETTY_CHANNEL_KEY = AttributeKey.valueOf("netty.channel");
 
     /**
@@ -57,6 +61,7 @@ public class NettyChannel implements JChannel {
         Attribute<NettyChannel> attr = channel.attr(NETTY_CHANNEL_KEY);
         NettyChannel nChannel = attr.get();
         if (nChannel == null) {
+            // 将本对象 连接到 channel 上
             NettyChannel newNChannel = new NettyChannel(channel);
             nChannel = attr.setIfAbsent(newNChannel);
             if (nChannel == null) {
@@ -66,10 +71,22 @@ public class NettyChannel implements JChannel {
         return nChannel;
     }
 
+    /**
+     * netty 内置的channel
+     */
     private final Channel channel;
+    /**
+     * buf 分配器
+     */
     private final AdaptiveOutputBufAllocator.Handle allocHandle = AdaptiveOutputBufAllocator.DEFAULT.newHandle();
 
+    /**
+     * 返回 mpsc 对象 内部用于存放 CPU 密集型任务
+     */
     private final Queue<Runnable> taskQueue = PlatformDependent.newMpscQueue(1024);
+    /**
+     * 用于执行 taskQueue 中的所有任务
+     */
     private final Runnable runAllTasks = this::runAllTasks;
 
     private NettyChannel(Channel channel) {
@@ -87,11 +104,13 @@ public class NettyChannel implements JChannel {
 
     @Override
     public boolean isActive() {
+        // jdk 底层有api 可以判断
         return channel.isActive();
     }
 
     @Override
     public boolean inIoThread() {
+        // 当前线程是否是 eventLoop 绑定的线程
         return channel.eventLoop().inEventLoop();
     }
 
@@ -107,9 +126,14 @@ public class NettyChannel implements JChannel {
 
     @Override
     public boolean isWritable() {
+        // 配合 ChannelOutboundBuffer 的高低水位
         return channel.isWritable();
     }
 
+    /**
+     * 开启重连狗
+     * @return
+     */
     @Override
     public boolean isMarkedReconnect() {
         ConnectionWatchdog watchdog = channel.pipeline().get(ConnectionWatchdog.class);
@@ -128,10 +152,16 @@ public class NettyChannel implements JChannel {
 
     @Override
     public JChannel close() {
+        // 内部调用jdk  channel.close() 关闭连接
         channel.close();
         return this;
     }
 
+    /**
+     * 关闭 同时根据结果触发监听器
+     * @param listener
+     * @return
+     */
     @Override
     public JChannel close(final JFutureListener<JChannel> listener) {
         final JChannel jChannel = this;
@@ -183,6 +213,9 @@ public class NettyChannel implements JChannel {
         }
     }
 
+    /**
+     * 执行 所有任务队列中的任务
+     */
     private void runAllTasks() {
         if (taskQueue.isEmpty()) {
             return;
@@ -197,6 +230,10 @@ public class NettyChannel implements JChannel {
         }
     }
 
+    /**
+     * 创建 jupiter 使用的输出缓冲区
+     * @return
+     */
     @Override
     public OutputBuf allocOutputBuf() {
         return new NettyOutputBuf(allocHandle, channel.alloc());
@@ -217,8 +254,14 @@ public class NettyChannel implements JChannel {
         return channel.toString();
     }
 
+    /**
+     * jupiter 内部用的输出缓冲区
+     */
     static final class NettyOutputBuf implements OutputBuf {
 
+        /**
+         * 内存分配器
+         */
         private final AdaptiveOutputBufAllocator.Handle allocHandle;
         private final ByteBuf byteBuf;
         private ByteBuffer nioByteBuffer;
@@ -227,6 +270,7 @@ public class NettyChannel implements JChannel {
             this.allocHandle = allocHandle;
             byteBuf = allocHandle.allocate(alloc);
 
+            // 确保buf有最小的空间 同时设置起始偏移量
             byteBuf.ensureWritable(JProtocolHeader.HEADER_SIZE)
                     // reserved 16-byte protocol header location
                     .writerIndex(byteBuf.writerIndex() + JProtocolHeader.HEADER_SIZE);

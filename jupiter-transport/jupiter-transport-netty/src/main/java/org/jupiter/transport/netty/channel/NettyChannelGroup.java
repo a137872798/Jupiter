@@ -47,6 +47,7 @@ import org.jupiter.transport.channel.JChannelGroup;
  * jupiter
  * org.jupiter.transport.netty.channel
  *
+ * 连接组对象
  * @author jiachun.fjc
  */
 public class NettyChannelGroup implements JChannelGroup {
@@ -63,13 +64,22 @@ public class NettyChannelGroup implements JChannelGroup {
 
     private final ConcurrentLinkedQueue<Runnable> waitAvailableListeners = new ConcurrentLinkedQueue<>();
 
+    /**
+     * 该 channelGroup 绑定的地址
+     */
     private final UnresolvedAddress address;
 
+    /**
+     * 组内所有channel
+     */
     private final CopyOnWriteArrayList<NettyChannel> channels = new CopyOnWriteArrayList<>();
 
-    // 连接断开时自动被移除
+    // 连接断开时自动被移除 该监听器应该会加在所有连接后面 这样某个channel 关闭时自动从group中移除
     private final ChannelFutureListener remover = future -> remove(NettyChannel.attachChannel(future.channel()));
 
+    /**
+     * 看作一个id生成器
+     */
     private final IntSequence sequence = new IntSequence(DEFAULT_SEQUENCE_STEP);
 
     private final ConcurrentMap<String, Integer> weights = Maps.newConcurrentMap();

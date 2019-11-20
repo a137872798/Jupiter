@@ -29,6 +29,7 @@ import static org.jupiter.common.util.Requires.requireNotNull;
  * jupiter
  * org.jupiter.rpc.model.metadata
  *
+ * 可能directory 想代表的是某种可查询对象吧
  * @author jiachun.fjc
  */
 public class ServiceMetadata extends Directory implements Serializable {

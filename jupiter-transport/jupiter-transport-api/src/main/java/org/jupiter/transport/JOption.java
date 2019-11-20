@@ -79,6 +79,8 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * 对此连接禁用Nagle算法.    Nagle 即是为了避免在发送端数据发送过慢 ， 比如每产生一个字节就会发送一个数据包 可是在TCP 报文中
      * 固定的部分占了很大的比重比如40 字节 这样就有很多的浪费 所以诞生了Nagle算法 用于强制发送端发送较大的数据(等待小数据队列) 但是这样数据就会有延时
      * 这里的 No_Delay 就是要禁用该算法
+     * 注意 它与塞子算法的不同点是  与某台机器交互中只能存在一个 未确认的消息 也就是发送数据包1 后 在收到1的ack之前有足够的时间 收集将要发送的
+     * 下批数据
      */
     public static final JOption<Boolean> TCP_NODELAY = valueOf("TCP_NODELAY");
 
@@ -169,7 +171,8 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * 还有一点要注意, 对于TCP连接的ESTABLISHED状态, 并不需要应用层accept,
      * 只要在accept queue里就已经变成状态ESTABLISHED, 所以在使用ss或netstat排查这方面问题不要被ESTABLISHED迷惑.
      *
-     * 允许最大悬挂的全连接数
+     * 准备好的连接会存放在一个 acceptQueue 队列中  只有当服务端触发 accept时 才会将连接从队列中取出来 当该队列满时(服务器来不及取出来)
+     * 这时客户端尝试建立新连接会被拒绝
      */
     public static final JOption<Integer> SO_BACKLOG = valueOf("SO_BACKLOG");
 
@@ -182,13 +185,17 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * Other bits are invalid and shall be cleared.  Linux sends IPTOS_LOWDELAY datagrams first by default,
      * but the exact behavior depends on the configured queueing discipline.  Some high-priority levels may require
      * superuser privileges (the CAP_NET_ADMIN capability).
+     * 用于标明本次请求的  一些优先级    分为 最小时延、最大吞吐量、最高可靠性和最小费用
      */
     public static final JOption<Integer> IP_TOS = valueOf("IP_TOS");
 
+    /**
+     * 如果该值为false 当对端关闭连接时本端连接自动关闭 如果该值为true 对端连接关闭时 会触发channelInboundHandler的 ALLOW_HALF_CLOSURE
+     */
     public static final JOption<Boolean> ALLOW_HALF_CLOSURE = valueOf("ALLOW_HALF_CLOSURE");
 
     /**
-     * Netty的选项, write高水位线.
+     * Netty的选项, write高水位线.  该属性对应 channel.isWriterable()  代表缓冲区是否有足够的空间
      */
     public static final JOption<Integer> WRITE_BUFFER_HIGH_WATER_MARK = valueOf("WRITE_BUFFER_HIGH_WATER_MARK");
 
@@ -213,6 +220,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * epoll socket channels to the same port and so accept connections with multiple threads.
      *
      * Be aware this method needs be called before channel#bind to have any affect.
+     * 套接字将会以线程为单位 每个线程对应的套接字使用相同的端口和 ip 通过内核级别进行负载
      */
     public static final JOption<Boolean> SO_REUSEPORT = valueOf("SO_REUSEPORT");
 
@@ -224,27 +232,34 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * If this ceiling is reached, then queued data is automatically transmitted.
      * This option can be combined with TCP_NODELAY only since Linux 2.5.71.
      * This option should not be used in code intended to be portable.
+     * 塞子算法 将小的数据包收集组合后发送
      */
     public static final JOption<Boolean> TCP_CORK = valueOf("TCP_CORK");
 
+    /**
+     * 发送缓存的 资料很少 先忽略
+     */
     public static final JOption<Long> TCP_NOTSENT_LOWAT = valueOf("TCP_NOTSENT_LOWAT");
 
     /**
      * The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes,
      * if the socket option SO_KEEPALIVE has been set on this socket.
      * This option should not be used in code intended to be portable.
+     * 控制 首次触发 SO_KEEPALIVE探测包的间隔时间
      */
     public static final JOption<Integer> TCP_KEEPIDLE = valueOf("TCP_KEEPIDLE");
 
     /**
      * The time (in seconds) between individual keepalive probes.
      * This option should not be used in code intended to be portable.
+     * 2次探测间的时间间隔
      */
     public static final JOption<Integer> TCP_KEEPINTVL = valueOf("TCP_KEEPINTVL");
 
     /**
      * The maximum number of keepalive probes TCP should send before dropping the connection.
      * This option should not be used in code intended to be portable.
+     * 确认非活跃的最大重试次数
      */
     public static final JOption<Integer> TCP_KEEPCNT = valueOf("TCP_KEEPCNT");
 
@@ -271,6 +286,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      *
      * Further details on the user timeout feature can be found in
      * RFC 793 and RFC 5482 ("TCP User Timeout Option").
+     * 允许ack 延时的最大时间 在此之后就认为本次发送失败
      */
     public static final JOption<Integer> TCP_USER_TIMEOUT = valueOf("TCP_USER_TIMEOUT");
 
@@ -279,6 +295,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * This per‐mits listening on a socket, without requiring the underlying network interface or
      * the specified dynamic IP address to be up at the time that the application is trying to bind to it.
      * This option is the per-socket equivalent of the ip_nonlo‐cal_bind /proc interface described below.
+     * 虚拟端口??? 看不懂
      */
     public static final JOption<Boolean> IP_FREEBIND = valueOf("IP_FREEBIND");
 
@@ -289,6 +306,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * be set up in a way that packets going to the foreign address are routed through the
      * TProxy box (i.e., the system hosting the application that employs the IP_TRANSPARENT socket option).
      * Enabling this socket option requires superuser privileges (the CAP_NET_ADMIN capability).
+     * 开启代理路由 应该用不到 先不管
      */
     public static final JOption<Boolean> IP_TRANSPARENT = valueOf("IP_TRANSPARENT");
 
@@ -297,6 +315,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * effect. This has to be set before doing listen on the socket otherwise this takes no effect.
      *
      * @see <a href="https://tools.ietf.org/html/rfc7413">RFC 7413 TCP FastOpen</a>
+     * 节省三次握手中最后一次ack 改成直接发送消息
      */
     public static final JOption<Integer> TCP_FASTOPEN = valueOf("TCP_FASTOPEN");
 
@@ -305,14 +324,16 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * See
      * <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=19f6d3f3">this commit</a>
      * for more details.
+     * 不懂
      */
-    public static final JOption<Boolean> TCP_FASTOPEN_CONNECT = valueOf("TCP_FASTOPEN_CONNECT");
+        public static final JOption<Boolean> TCP_FASTOPEN_CONNECT = valueOf("TCP_FASTOPEN_CONNECT");
 
     /**
      * Allow a listener to be awakened only when data arrives on the socket.
      * Takes an integer value (seconds), this can bound the maximum number of
      * attempts TCP will make to complete the connection.
      * This option should not be used in code intended to be portable.
+     * 设置该标识后 只有在 对端发送数据了才会从accept()中返回  默认情况只要通过3次握手就能建立连接
      */
     public static final JOption<Integer> TCP_DEFER_ACCEPT = valueOf("TCP_DEFER_ACCEPT");
 
@@ -326,6 +347,10 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      *
      * TCP_QUICKACK不是永久的, 所以TCP_QUICKACK选项应该是需要在每次调用recv后重新设置的
      * Netty代码的实现可能忽略了这个问题(只设置了一次)
+     *
+     * 快速ACK 默认情况下接收端 在收到数据后会 等待一段时间 如果时间内没有新的数据需要发送到对端就返回纯ACK
+     * 如果有数据包 就整合到一个数据包中发送
+     * 设置该标识后每次都立即返回ACK包
      */
     public static final JOption<Boolean> TCP_QUICKACK = valueOf("TCP_QUICKACK");
 
@@ -334,6 +359,7 @@ public final class JOption<T> extends AbstractConstant<JOption<T>> {
      * and have an accurate behaviour you should use LEVEL_TRIGGERED.
      *
      * Be aware this config setting can only be adjusted before the channel was registered.
+     * linux 下 epoll相关的选项 因为只了解 select 就先不看这个
      */
     public static final JOption<Boolean> EDGE_TRIGGERED = valueOf("EDGE_TRIGGERED");
 

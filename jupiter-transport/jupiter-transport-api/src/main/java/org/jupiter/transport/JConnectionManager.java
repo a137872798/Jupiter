@@ -27,17 +27,21 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  *
  * jupiter
  * org.jupiter.transport
- *
+ * 类似于连接池???
  * @author jiachun.fjc
  */
 public class JConnectionManager {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(JConnectionManager.class);
 
+    /**
+     * 每个地址有一组连接
+     */
     private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<JConnection>> connections = Maps.newConcurrentMap();
 
     /**
      * 设置为由jupiter自动管理连接
+     * 将连接交由连接池管理
      */
     public void manage(JConnection connection) {
         UnresolvedAddress address = connection.getAddress();
