@@ -89,12 +89,15 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
             weightArray = WeightSupport.computeWeights(groups, elements, directory);
         }
 
+        // 获取当前 轮询到的下标
         int rrIndex = indexUpdater.getAndIncrement(this) & Integer.MAX_VALUE;
 
+        // 如果所有节点权重一样就按照轮询下标来获取
         if (weightArray.isAllSameWeight()) {
             return elements[rrIndex % length];
         }
 
+        // 获取一个更合适的节点
         int nextIndex = getNextServerIndex(weightArray, length, rrIndex);
 
         return elements[nextIndex];
@@ -105,14 +108,16 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
         int maxWeight = weights[0] = weightArray.get(0);
         for (int i = 1; i < length; i++) {
             weights[i] = weightArray.get(i) - weightArray.get(i - 1);
+            // 差值就相当于 恢复到每个对象真实的权重
             if (weights[i] > maxWeight) {
                 maxWeight = weights[i];
             }
         }
 
-        // the greatest common divisor
+        // the greatest common divisor  获取最大公约数
         int gcd = weightArray.gcd();
         if (gcd < 1) {
+            // 计算并设置
             gcd = WeightSupport.n_gcd(weights, length);
             weightArray.gcd(gcd);
         }

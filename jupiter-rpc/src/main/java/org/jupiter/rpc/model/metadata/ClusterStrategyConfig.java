@@ -23,13 +23,20 @@ import org.jupiter.rpc.consumer.cluster.ClusterInvoker;
  * Jupiter
  * org.jupiter.rpc.model.metadata
  *
+ * 集群策略相关配置
  * @author jiachun.fjc
  */
 public class ClusterStrategyConfig implements Serializable {
 
     private static final long serialVersionUID = 8192956131353063709L;
 
+    /**
+     * 采用的集群容错
+     */
     private ClusterInvoker.Strategy strategy;
+    /**
+     * 针对重试策略的重试次数
+     */
     private int failoverRetries;
 
     public static ClusterStrategyConfig of(String strategy, String failoverRetries) {

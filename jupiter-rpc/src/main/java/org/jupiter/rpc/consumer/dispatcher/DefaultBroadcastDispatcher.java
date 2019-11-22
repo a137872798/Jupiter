@@ -43,6 +43,13 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
         super(client, serializerType);
     }
 
+    /**
+     * 组播方式进行  这里的组播针对的是 某个consumer的请求会发给所有具备该调用服务的provider???
+     * @param request
+     * @param returnType
+     * @param <T>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     @Override
     public <T> InvokeFuture<T> dispatch(JRequest request, Class<T> returnType) {
@@ -50,6 +57,7 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
         final Serializer _serializer = serializer();
         final MessageWrapper message = request.message();
 
+        // 返回对应某一服务 所有的服务提供者 首先数组本身是一个维度 然后group是第二维度 代表针对某一提供者的所有channel
         JChannelGroup[] groups = groups(message.getMetadata());
         JChannel[] channels = new JChannel[groups.length];
         for (int i = 0; i < groups.length; i++) {
@@ -59,6 +67,7 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
         byte s_code = _serializer.code();
         // 在业务线程中序列化, 减轻IO线程负担
         boolean isLowCopy = CodecConfig.isCodecLowCopy();
+        // 看来该标识是决定 在什么线程进行序列化的 false 的情况直接在调用dispatch 线程进行序列化
         if (!isLowCopy) {
             byte[] bytes = _serializer.writeObject(message);
             request.bytes(s_code, bytes);
@@ -66,15 +75,18 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
 
         DefaultInvokeFuture<T>[] futures = new DefaultInvokeFuture[channels.length];
         for (int i = 0; i < channels.length; i++) {
+            // 找到每个channel 并进行序列化  这里跟上面的区别是什么 ???
             JChannel channel = channels[i];
             if (isLowCopy) {
                 OutputBuf outputBuf =
                         _serializer.writeObject(channel.allocOutputBuf(), message);
                 request.outputBuf(s_code, outputBuf);
             }
+            // 将请求对象通过不同的channel 发出 并维护对应所有的future
             futures[i] = write(channel, request, returnType, DispatchType.BROADCAST);
         }
 
+        // 就是new DefaultInvokeFutureGroup<>(futures)
         return DefaultInvokeFutureGroup.with(futures);
     }
 }

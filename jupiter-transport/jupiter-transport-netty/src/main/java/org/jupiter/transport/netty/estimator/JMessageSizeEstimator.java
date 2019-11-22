@@ -39,6 +39,11 @@ public class JMessageSizeEstimator implements MessageSizeEstimator {
             this.unknownSize = unknownSize;
         }
 
+        /**
+         * 根据消息来反应水位线
+         * @param msg
+         * @return
+         */
         @Override
         public int size(Object msg) {
             if (msg instanceof ByteBuf) {
@@ -53,7 +58,7 @@ public class JMessageSizeEstimator implements MessageSizeEstimator {
                 return 0;
             }
 
-            // jupiter object
+            // jupiter object  这里插入了自己的逻辑
             if (msg instanceof PayloadHolder) {
                 return ((PayloadHolder) msg).size();
             }

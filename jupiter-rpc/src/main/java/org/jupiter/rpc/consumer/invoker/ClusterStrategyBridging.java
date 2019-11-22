@@ -35,13 +35,27 @@ import org.jupiter.rpc.model.metadata.MethodSpecialConfig;
  */
 public class ClusterStrategyBridging {
 
+    /**
+     * 默认的集群调用者
+     */
     private final ClusterInvoker defaultClusterInvoker;
+    /**
+     * 按方法级别绑定 集群invoker
+     */
     private final Map<String, ClusterInvoker> methodSpecialClusterInvokerMapping;
 
+    /**
+     * 通过dispatcher 对象进行 集群invoker对象的初始化
+     * @param dispatcher
+     * @param defaultStrategy  策略配置对象 包含指定的集群容错策略 以及 重试次数
+     * @param methodSpecialConfigs  方法级别调用相关的配置
+     */
     public ClusterStrategyBridging(Dispatcher dispatcher,
                                    ClusterStrategyConfig defaultStrategy,
                                    List<MethodSpecialConfig> methodSpecialConfigs) {
+        // 生成对应的 集群容错对象
         this.defaultClusterInvoker = createClusterInvoker(dispatcher, defaultStrategy);
+        // 根据方法配置 生成方法级别的集群容错对象
         this.methodSpecialClusterInvokerMapping = Maps.newHashMap();
 
         for (MethodSpecialConfig config : methodSpecialConfigs) {

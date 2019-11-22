@@ -51,6 +51,7 @@ import org.jupiter.transport.UnresolvedAddress;
  * jupiter
  * org.jupiter.rpc.consumer
  *
+ * 泛化代理工厂
  * @author jiachun.fjc
  */
 public class GenericProxyFactory {
@@ -186,6 +187,10 @@ public class GenericProxyFactory {
         return this;
     }
 
+    /**
+     * 生成动态代理对象
+     * @return
+     */
     public GenericInvoker newProxyInstance() {
         // check arguments
         Requires.requireTrue(Strings.isNotBlank(group), "group");
@@ -193,6 +198,7 @@ public class GenericProxyFactory {
         Requires.requireNotNull(client, "client");
         Requires.requireNotNull(serializerType, "serializerType");
 
+        // 不支持广播同步方式调用
         if (dispatchType == DispatchType.BROADCAST && invokeType == InvokeType.SYNC) {
             throw reject("broadcast & sync unsupported");
         }
@@ -204,6 +210,7 @@ public class GenericProxyFactory {
                 Strings.isNotBlank(version) ? version : JConstants.DEFAULT_VERSION
         );
 
+        // 产生channel 的功能被封装到该对象中
         JConnector<JConnection> connector = client.connector();
         for (UnresolvedAddress address : addresses) {
             connector.addChannelGroup(metadata, connector.group(address));

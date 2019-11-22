@@ -25,6 +25,7 @@ import org.jupiter.transport.UnresolvedAddress;
  * jupiter
  * org.jupiter.transport.netty
  *
+ * 增加设置监听器的能力
  * @author jiachun.fjc
  */
 public abstract class JNettyConnection extends JConnection {

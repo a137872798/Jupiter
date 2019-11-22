@@ -21,9 +21,17 @@ package org.jupiter.rpc.consumer.invoker;
  * jupiter
  * org.jupiter.rpc.consumer.invoker
  *
+ * 泛化调用就是不需要 api 包 (类比 dubbo没有 api层)
  * @author jiachun.fjc
  */
 public interface GenericInvoker {
 
+    /**
+     * 泛化调用 传入方法名和参数直接调用
+     * @param methodName
+     * @param args
+     * @return
+     * @throws Throwable
+     */
     Object $invoke(String methodName, Object... args) throws Throwable;
 }

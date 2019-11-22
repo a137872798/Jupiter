@@ -24,6 +24,7 @@ import org.jupiter.transport.Directory;
  * jupiter
  * org.jupiter.rpc.provider
  *
+ * 查询服务
  * @author jiachun.fjc
  */
 public interface LookupService {

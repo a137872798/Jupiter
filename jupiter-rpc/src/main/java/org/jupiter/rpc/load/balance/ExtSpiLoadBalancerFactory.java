@@ -18,7 +18,7 @@ package org.jupiter.rpc.load.balance;
 /**
  * jupiter
  * org.jupiter.rpc.load.balance
- *
+ * 基于SPI 的拓展均衡负载工厂
  * @author jiachun.fjc
  */
 public interface ExtSpiLoadBalancerFactory {

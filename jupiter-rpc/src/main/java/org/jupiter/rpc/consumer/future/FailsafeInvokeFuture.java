@@ -60,10 +60,12 @@ public class FailsafeInvokeFuture<V> extends CompletableFuture<V> implements Inv
         try {
             return future.getResult();
         } catch (Throwable t) {
+            // getResult 本身是阻塞操作 可能会返回超时异常
             if (logger.isWarnEnabled()) {
                 logger.warn("Ignored exception on [Fail-safe]: {}.", StackTraceUtil.stackTrace(t));
             }
         }
+        // 这里打印异常信息的同时返回默认值
         return (V) Reflects.getTypeDefaultValue(returnType());
     }
 

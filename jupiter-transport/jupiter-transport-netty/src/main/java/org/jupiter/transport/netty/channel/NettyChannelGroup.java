@@ -82,6 +82,9 @@ public class NettyChannelGroup implements JChannelGroup {
      */
     private final IntSequence sequence = new IntSequence(DEFAULT_SEQUENCE_STEP);
 
+    /**
+     * 这里key 应该是服务三元组  value 是 权重
+     */
     private final ConcurrentMap<String, Integer> weights = Maps.newConcurrentMap();
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -90,13 +93,23 @@ public class NettyChannelGroup implements JChannelGroup {
     @SuppressWarnings("all")
     private volatile int signalNeeded = 0; // 0: false, 1: true
 
+    /**
+     * 是否正在连接中
+     */
     private volatile boolean connecting = false;
 
     private volatile int capacity = Integer.MAX_VALUE;
+    /**
+     * 暖机时间
+     */
     private volatile int warmUp = JConstants.DEFAULT_WARM_UP; // warm-up time
     private volatile long timestamp = SystemClock.millisClock().now();
     private volatile long deadlineMillis = -1;
 
+    /**
+     * 每个地址对应一组 channel
+     * @param address
+     */
     public NettyChannelGroup(UnresolvedAddress address) {
         this.address = address;
     }
@@ -106,6 +119,10 @@ public class NettyChannelGroup implements JChannelGroup {
         return address;
     }
 
+    /**
+     * 从channelGroup 中选择下一个channel
+     * @return
+     */
     @Override
     public JChannel next() {
         for (;;) {
@@ -113,6 +130,7 @@ public class NettyChannelGroup implements JChannelGroup {
             Object[] elements = channelsUpdater.get(channels);
             int length = elements.length;
             if (length == 0) {
+                // 如果当前group 中没有channel 等待一定时间后继续尝试获取
                 if (waitForAvailable(1000)) { // wait a moment
                     continue;
                 }
@@ -138,6 +156,11 @@ public class NettyChannelGroup implements JChannelGroup {
         return channels.isEmpty();
     }
 
+    /**
+     * 添加channel 需要加锁
+     * @param channel
+     * @return
+     */
     @SuppressWarnings("ConstantConditions")
     @Override
     public boolean add(JChannel channel) {
@@ -158,6 +181,7 @@ public class NettyChannelGroup implements JChannelGroup {
                 }
             }
 
+            // 触发所有等待唤醒的监听器
             notifyListeners();
         }
         return added;
@@ -206,6 +230,12 @@ public class NettyChannelGroup implements JChannelGroup {
         return !channels.isEmpty();
     }
 
+    /**
+     * 当group 中没有连接时 调用该方法等待  实际上就是通过condition 对象 如果提前设置了 channel 就能提前唤醒
+     * 顶层通过 LockSupport.unpark 唤醒  LockSupport.park 的线程
+     * @param timeoutMillis
+     * @return
+     */
     @Override
     public boolean waitForAvailable(long timeoutMillis) {
         boolean available = isAvailable();
@@ -241,6 +271,11 @@ public class NettyChannelGroup implements JChannelGroup {
         }
     }
 
+    /**
+     * 获取某个三元组对应的权重
+     * @param directory
+     * @return
+     */
     @Override
     public int getWeight(Directory directory) {
         Requires.requireNotNull(directory, "directory");
@@ -249,6 +284,11 @@ public class NettyChannelGroup implements JChannelGroup {
         return weight == null ? JConstants.DEFAULT_WEIGHT : weight;
     }
 
+    /**
+     * 设置权重 未设置情况使用默认权重
+     * @param directory
+     * @param weight
+     */
     @Override
     public void putWeight(Directory directory, int weight) {
         Requires.requireNotNull(directory, "directory");

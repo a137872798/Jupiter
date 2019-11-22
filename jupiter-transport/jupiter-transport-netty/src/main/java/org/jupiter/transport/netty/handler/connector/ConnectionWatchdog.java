@@ -42,6 +42,7 @@ import org.jupiter.transport.netty.handler.ChannelHandlerHolder;
  * jupiter
  * org.jupiter.transport.netty.handler.connector
  *
+ * 重连狗 具备定时重连功能
  * @author jiachun.fjc
  */
 @ChannelHandler.Sharable
@@ -49,15 +50,33 @@ public abstract class ConnectionWatchdog extends ChannelInboundHandlerAdapter im
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(ConnectionWatchdog.class);
 
+    /**
+     * 当前重连狗的状态
+     */
     private static final int ST_STARTED = 1;
     private static final int ST_STOPPED = 2;
 
+    /**
+     * 包含 bootstrap的引用才能进行连接
+     */
     private final Bootstrap bootstrap;
     private final Timer timer;
+    /**
+     * 对端地址 有了它才能发起连接
+     */
     private final SocketAddress remoteAddress;
+    /**
+     * channel 组
+     */
     private final JChannelGroup group;
 
+    /**
+     * 默认处于开启状态
+     */
     private volatile int state = ST_STARTED;
+    /**
+     * 重连次数
+     */
     private int attempts;
 
     public ConnectionWatchdog(Bootstrap bootstrap, Timer timer, SocketAddress remoteAddress, JChannelGroup group) {
@@ -110,6 +129,11 @@ public abstract class ConnectionWatchdog extends ChannelInboundHandlerAdapter im
         ctx.fireChannelInactive();
     }
 
+    /**
+     * 重连逻辑
+     * @param timeout
+     * @throws Exception
+     */
     @Override
     public void run(Timeout timeout) throws Exception {
         if (!isReconnectNeeded()) {
@@ -135,6 +159,7 @@ public abstract class ConnectionWatchdog extends ChannelInboundHandlerAdapter im
             logger.warn("Reconnects with {}, {}.", remoteAddress, succeed ? "succeed" : "failed");
 
             if (!succeed) {
+                // 失败时传播失活 同时又再次设置定时重连任务
                 f.channel().pipeline().fireChannelInactive();
             }
         });

@@ -94,7 +94,7 @@ public class MessageTask implements RejectedRunnable {
         final DefaultProviderProcessor _processor = processor;
         final JRequest _request = request;
 
-        // 全局流量控制
+        // 全局流量控制  provider 接收消息时会经过流量控制器处理
         ControlResult ctrl = _processor.flowControl(_request);
         if (!ctrl.isAllowed()) {
             rejected(Status.APP_FLOW_CONTROL, new JupiterFlowControlException(String.valueOf(ctrl)));

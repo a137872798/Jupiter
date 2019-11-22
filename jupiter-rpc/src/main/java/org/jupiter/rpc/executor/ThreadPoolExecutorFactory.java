@@ -38,6 +38,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 普通线程池
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "threadPool", priority = 1)

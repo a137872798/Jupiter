@@ -26,6 +26,7 @@ import static java.lang.Math.min;
  * jupiter
  * org.jupiter.rpc.load.balance
  *
+ * 权重相关工具类
  * @author jiachun.fjc
  */
 final class WeightSupport {
@@ -50,10 +51,18 @@ final class WeightSupport {
         return low;
     }
 
+    /**
+     * 计算权重
+     * @param groups
+     * @param elements
+     * @param directory
+     * @return
+     */
     static WeightArray computeWeights(CopyOnWriteGroupList groups, JChannelGroup[] elements, Directory directory) {
         int length = elements.length;
         int[] weights = new int[length];
 
+        // 判断是否预热完成  就是启动时到现在时间差是否超过 预热时间
         boolean allWarmUpComplete = elements[0].isWarmUpComplete();
         boolean allSameWeight = true;
         weights[0] = getWeight(elements[0], directory);
@@ -63,6 +72,7 @@ final class WeightSupport {
             allSameWeight &= (weights[i - 1] == weights[i]);
         }
 
+        // 如果所有节点 的权重 都一样 那么将权重置空 代表每个节点优先级相同
         if (allWarmUpComplete && allSameWeight) {
             weights = null;
         }
@@ -70,12 +80,14 @@ final class WeightSupport {
         if (weights != null) {
             for (int i = 1; i < length; i++) {
                 // [curVal += preVal] for binary search
+                // 数组中每个元素的值都是之前所有元素累加的和
                 weights[i] += weights[i - 1];
             }
         }
 
         WeightArray weightArray = new WeightArray(weights, length);
 
+        // 只有所有节点都暖机完成时才设置权重
         if (allWarmUpComplete) {
             groups.setWeightArray(elements, directory.directoryString(), weightArray);
         }
@@ -90,13 +102,19 @@ final class WeightSupport {
         int upTime = (int) (SystemClock.millisClock().now() - group.timestamp());
 
         if (upTime > 0 && upTime < warmUp) {
-            // 对端服务预热中, 计算预热权重
+            // 对端服务预热中, 计算预热权重    upTime / warmUp 代表预热完成百分比
             weight = (int) (((float) upTime / warmUp) * weight);
         }
 
         return weight > 0 ? weight : 0;
     }
 
+    /**
+     * 计算最大公约数
+     * @param array
+     * @param n
+     * @return
+     */
     static int n_gcd(int[] array, int n) {
         if (n == 1) {
             return array[0];

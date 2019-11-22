@@ -56,6 +56,9 @@ public class DefaultClient implements JClient {
     private final RegistryService registryService;
     private final String appName;
 
+    /**
+     * 该对象包含了连接的逻辑
+     */
     private JConnector<JConnection> connector;
 
     public DefaultClient() {

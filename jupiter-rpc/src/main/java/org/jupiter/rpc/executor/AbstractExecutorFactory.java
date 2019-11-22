@@ -26,15 +26,18 @@ import org.jupiter.common.util.SystemPropertyUtil;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 线程池工厂
  * @author jiachun.fjc
  */
 public abstract class AbstractExecutorFactory implements ExecutorFactory {
 
     protected ThreadFactory threadFactory(String name) {
+        // 是否采用亲和线程工厂 代表线程会绑定在内核上 先不管
         boolean affinity = SystemPropertyUtil.getBoolean(EXECUTOR_AFFINITY_THREAD, false);
         if (affinity) {
             return new AffinityNamedThreadFactory(name);
         } else {
+            // 使用优化过的线程工厂
             return new NamedThreadFactory(name);
         }
     }

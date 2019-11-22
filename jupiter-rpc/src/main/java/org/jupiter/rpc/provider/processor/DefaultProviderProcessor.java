@@ -40,6 +40,7 @@ import org.jupiter.transport.processor.ProviderProcessor;
  * jupiter
  * org.jupiter.rpc.provider.processor
  *
+ * 提供者端请求处理器
  * @author jiachun.fjc
  */
 public abstract class DefaultProviderProcessor implements ProviderProcessor, LookupService, FlowController<JRequest> {
@@ -66,6 +67,13 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
         }
     }
 
+    /**
+     * 处理异常情况 当解析消息时被 限流限制会抛出异常
+     * @param channel
+     * @param request
+     * @param status
+     * @param cause
+     */
     @Override
     public void handleException(JChannel channel, JRequestPayload request, Status status, Throwable cause) {
         logger.error("An exception was caught while processing request: {}, {}.",
@@ -99,6 +107,15 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
                 channel, request.invokeId(), request.serializerCode(), status.value(), cause, true);
     }
 
+    /**
+     * 处理异常状态
+     * @param channel
+     * @param invokeId
+     * @param s_code
+     * @param status
+     * @param cause
+     * @param closeChannel
+     */
     private void doHandleException(
             JChannel channel, long invokeId, byte s_code, byte status, Throwable cause, boolean closeChannel) {
 
@@ -119,9 +136,11 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
             response.bytes(s_code, bytes);
         }
 
+        // 代表该异常是否需要关闭连接
         if (closeChannel) {
             channel.write(response, JChannel.CLOSE);
         } else {
+            // 否则打印日志
             channel.write(response, new JFutureListener<JChannel>() {
 
                 @Override

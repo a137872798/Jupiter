@@ -19,6 +19,7 @@ package org.jupiter.rpc.load.balance;
  * jupiter
  * org.jupiter.rpc.load.balance
  *
+ * 权重相关数组
  * @author jiachun.fjc
  */
 final class WeightArray {

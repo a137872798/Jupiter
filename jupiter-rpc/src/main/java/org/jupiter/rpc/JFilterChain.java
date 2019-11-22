@@ -20,12 +20,21 @@ package org.jupiter.rpc;
  * jupiter
  * org.jupiter.rpc
  *
+ * invoker调用时的过滤链   看来链表的职能是通过chain 实现的 而每个chain 对象绑定一个filter对象
  * @author jiachun.fjc
  */
 public interface JFilterChain {
 
+    /**
+     * 获取过滤器对象
+     * @return
+     */
     JFilter getFilter();
 
+    /**
+     * 获取下一个节点
+     * @return
+     */
     JFilterChain getNext();
 
     <T extends JFilterContext> void doFilter(JRequest request, T filterCtx) throws Throwable;

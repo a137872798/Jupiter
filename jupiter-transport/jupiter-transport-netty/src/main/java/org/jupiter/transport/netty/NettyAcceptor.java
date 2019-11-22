@@ -39,22 +39,38 @@ import org.jupiter.transport.processor.ProviderProcessor;
  * jupiter
  * org.jupiter.transport.netty
  *
+ * provider服务器基类
  * @author jiachun.fjc
  */
 public abstract class NettyAcceptor implements JAcceptor {
 
+    /**
+     * 采用的协议
+     */
     protected final Protocol protocol;
+    /**
+     * 本地地址
+     */
     protected final SocketAddress localAddress;
 
     protected final HashedWheelTimer timer = new HashedWheelTimer(new NamedThreadFactory("acceptor.timer", true));
 
+    /**
+     * boss 线程数量
+     */
     private final int nBosses;
+    /**
+     * 工作者线程数量
+     */
     private final int nWorkers;
 
     private ServerBootstrap bootstrap;
     private EventLoopGroup boss;
     private EventLoopGroup worker;
 
+    /**
+     * 对应的提供者处理器
+     */
     private ProviderProcessor processor;
 
     public NettyAcceptor(Protocol protocol, SocketAddress localAddress) {
@@ -101,7 +117,7 @@ public abstract class NettyAcceptor implements JAcceptor {
 
     @Override
     public int boundPort() {
-        if (!(localAddress instanceof InetSocketAddress)) {
+        if (!(localAddress instanceof InetSocketAddress)) { // InetSocketAddress 代表以 ip+port 作为地址
             throw new UnsupportedOperationException("Unsupported address type to get port");
         }
         return ((InetSocketAddress) localAddress).getPort();

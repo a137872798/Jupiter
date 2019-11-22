@@ -41,6 +41,7 @@ import org.jupiter.transport.channel.JChannelGroup;
  * jupiter
  * org.jupiter.rpc.load.balance
  *
+ * 权重挂钩的随机节点均衡负载
  * @author jiachun.fjc
  */
 public class RandomLoadBalancer implements LoadBalancer {
@@ -53,6 +54,7 @@ public class RandomLoadBalancer implements LoadBalancer {
 
     @Override
     public JChannelGroup select(CopyOnWriteGroupList groups, Directory directory) {
+        // 获取内部channel 组 （两层维度的组）
         JChannelGroup[] elements = groups.getSnapshot();
         int length = elements.length;
 
@@ -64,14 +66,19 @@ public class RandomLoadBalancer implements LoadBalancer {
             return elements[0];
         }
 
+        // 返回维护权重的数组
         WeightArray weightArray = (WeightArray) groups.getWeightArray(elements, directory.directoryString());
         if (weightArray == null || weightArray.length() != length) {
+            // 代表权重值无效 重新计算
             weightArray = WeightSupport.computeWeights(groups, elements, directory);
         }
 
+        // 生成随机值
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
+        // computeWeights 如果所有节点的权重一致 内部就是null 对应 isAllSameWeight is true
         if (weightArray.isAllSameWeight()) {
+            // 随机返回一个 channelGroup
             return elements[random.nextInt(length)];
         }
 
@@ -81,8 +88,10 @@ public class RandomLoadBalancer implements LoadBalancer {
     }
 
     private static int getNextServerIndex(WeightArray weightArray, int length, ThreadLocalRandom random) {
+        // WeightArray 数组中每个元素 都是之前所有元素的总和
         int sumWeight = weightArray.get(length - 1);
         int val = random.nextInt(sumWeight + 1);
+        // 按照随机值去找对应的 数组元素  采用 每个元素求和的原因是为了 使用二分查找 这样强行构造了一个顺序数组  否则数组是无序的就无法使用二分查找了
         return WeightSupport.binarySearchIndex(weightArray, length, val);
     }
 }

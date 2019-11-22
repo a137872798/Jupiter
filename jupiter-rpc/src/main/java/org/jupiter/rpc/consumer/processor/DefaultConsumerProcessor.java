@@ -28,10 +28,14 @@ import org.jupiter.transport.processor.ConsumerProcessor;
  * jupiter
  * org.jupiter.rpc.consumer.processor
  *
+ * 默认的消费者处理器
  * @author jiachun.fjc
  */
 public class DefaultConsumerProcessor implements ConsumerProcessor {
 
+    /**
+     * 执行器对象
+     */
     private final CloseableExecutor executor;
 
     public DefaultConsumerProcessor() {
@@ -46,8 +50,10 @@ public class DefaultConsumerProcessor implements ConsumerProcessor {
     public void handleResponse(JChannel channel, JResponsePayload responsePayload) throws Exception {
         MessageTask task = new MessageTask(channel, new JResponse(responsePayload));
         if (executor == null) {
+            // 通过 netty I/O 线程进行编解码
             channel.addTask(task);
         } else {
+            // 放到额外的线程池进行编解码
             executor.execute(task);
         }
     }

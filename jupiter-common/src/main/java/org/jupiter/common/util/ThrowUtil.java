@@ -66,10 +66,16 @@ public final class ThrowUtil {
         throw (E) t;
     }
 
+    /**
+     * 截断异常 就是为了避免异常对象本身直接返回到消费端 类似dubbo 需要对 异常做处理 避免消费端无法正常序列化
+     * @param cause
+     * @param <T>
+     * @return
+     */
     public static <T extends Throwable> T cutCause(T cause) {
         Throwable rootCause = cause;
+        // 默认情况rootCause.getCause() 返回null
         while (rootCause.getCause() != null) {
-            // 获取源异常
             rootCause = rootCause.getCause();
         }
 

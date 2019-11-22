@@ -20,6 +20,7 @@ package org.jupiter.rpc;
  * jupiter
  * org.jupiter.rpc
  *
+ * 针对 P C A 端的过滤器 应该跟 dubbo的 过滤器差不多
  * @author jiachun.fjc
  */
 public interface JFilter {

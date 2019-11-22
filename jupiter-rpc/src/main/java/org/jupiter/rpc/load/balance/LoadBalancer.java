@@ -25,6 +25,7 @@ import org.jupiter.transport.channel.JChannelGroup;
  * jupiter
  * org.jupiter.rpc.load.balance
  *
+ * 均衡负载对象
  * @author jiachun.fjc
  */
 public interface LoadBalancer {

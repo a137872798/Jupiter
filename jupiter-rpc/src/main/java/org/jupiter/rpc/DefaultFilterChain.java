@@ -22,11 +22,18 @@ import org.jupiter.common.util.Requires;
  * jupiter
  * org.jupiter.rpc
  *
+ * 拦截链对象
  * @author jiachun.fjc
  */
 public class DefaultFilterChain implements JFilterChain {
 
+    /**
+     * 本节点关联的过滤器
+     */
     private final JFilter filter;
+    /**
+     * 下一个节点
+     */
     private final JFilterChain next;
 
     public DefaultFilterChain(JFilter filter, JFilterChain next) {

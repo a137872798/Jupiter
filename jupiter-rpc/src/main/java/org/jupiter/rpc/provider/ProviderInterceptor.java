@@ -19,6 +19,7 @@ package org.jupiter.rpc.provider;
  * jupiter
  * org.jupiter.rpc.provider
  *
+ * 提供者端拦截器
  * @author jiachun.fjc
  */
 public interface ProviderInterceptor {

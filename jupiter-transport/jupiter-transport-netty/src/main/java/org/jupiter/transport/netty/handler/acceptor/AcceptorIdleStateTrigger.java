@@ -27,6 +27,7 @@ import org.jupiter.transport.exception.IoSignals;
  * jupiter
  * org.jupiter.transport.netty.handler.acceptor
  *
+ * 开启空闲检测
  * @author jiachun.fjc
  */
 @ChannelHandler.Sharable
@@ -37,6 +38,7 @@ public class AcceptorIdleStateTrigger extends ChannelInboundHandlerAdapter {
         if (evt instanceof IdleStateEvent) {
             IdleState state = ((IdleStateEvent) evt).state();
             if (state == IdleState.READER_IDLE) {
+                // 不允许出现读空闲 因为client 会不断发送心跳 如果空闲就代表 对端关闭连接了
                 throw IoSignals.READER_IDLE;
             }
         } else {

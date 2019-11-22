@@ -29,6 +29,7 @@ import org.jupiter.transport.JProtocolHeader;
  * jupiter
  * org.jupiter.transport.netty.handler
  *
+ * ACK 编码器
  * @author jiachun.fjc
  */
 @ChannelHandler.Sharable

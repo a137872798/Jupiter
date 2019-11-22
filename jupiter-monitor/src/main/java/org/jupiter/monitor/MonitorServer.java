@@ -73,7 +73,7 @@ import org.jupiter.transport.netty.NettyTcpAcceptor;
  * jupiter
  * org.jupiter.monitor
  *
- * 监控服务器  TODO 该对象在梳理完jupiter的服务器逻辑后再看
+ * 监控服务器
  * @author jiachun.fjc
  */
 public class MonitorServer extends NettyTcpAcceptor {
@@ -82,7 +82,7 @@ public class MonitorServer extends NettyTcpAcceptor {
 
     private static final int DEFAULT_PORT = 19999;
 
-    // handlers
+    // handlers  解析telnet
     private final TelnetHandler handler = new TelnetHandler();
     private final StringEncoder encoder = new StringEncoder(StandardCharsets.UTF_8);
 

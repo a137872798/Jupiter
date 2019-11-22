@@ -24,6 +24,7 @@ import org.jupiter.rpc.provider.processor.ProviderExecutorFactory;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 执行工厂 分为消费者端 和 提供者端
  * @author jiachun.fjc
  */
 public interface ExecutorFactory extends ConsumerExecutorFactory, ProviderExecutorFactory {

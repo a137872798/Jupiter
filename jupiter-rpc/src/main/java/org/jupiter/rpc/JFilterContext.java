@@ -23,5 +23,9 @@ package org.jupiter.rpc;
  */
 public interface JFilterContext {
 
+    /**
+     * 获取本拦截器的类型
+     * @return
+     */
     JFilter.Type getType();
 }

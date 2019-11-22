@@ -34,6 +34,7 @@ import org.jupiter.rpc.model.metadata.ServiceMetadata;
  * jupiter
  * org.jupiter.rpc.consumer.invoker
  *
+ * 自动调用
  * @author jiachun.fjc
  */
 public class AutoInvoker extends AbstractInvoker {
@@ -51,18 +52,23 @@ public class AutoInvoker extends AbstractInvoker {
     public Object invoke(@Origin Method method, @AllArguments @RuntimeType Object[] args) throws Throwable {
         Class<?> returnType = method.getReturnType();
 
+        // 如果不是 future 对象则需要同步调用
         if (isSyncInvoke(returnType)) {
+            // 阻塞调用doInvoke
             return doInvoke(method.getName(), args, returnType, true);
         }
 
         InvokeFuture<Object> inf = (InvokeFuture<Object>) doInvoke(method.getName(), args, returnType, false);
 
+        // 如果返回结果是需要的类型 直接返回
         if (returnType.isAssignableFrom(inf.getClass())) {
             return inf;
         }
 
+        // 当future 对象执行完成后设置结果
         final CompletableFuture<Object> cf = newFuture((Class<CompletableFuture>) returnType);
         inf.whenComplete((result, throwable) -> {
+            //
             if (throwable == null) {
                 cf.complete(result);
             } else {

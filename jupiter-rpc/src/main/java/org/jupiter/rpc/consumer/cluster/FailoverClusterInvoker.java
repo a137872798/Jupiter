@@ -41,6 +41,7 @@ import org.jupiter.transport.channel.JChannel;
  * jupiter
  * org.jupiter.rpc.consumer.cluster
  *
+ * 自动切换服务
  * @author jiachun.fjc
  */
 public class FailoverClusterInvoker implements ClusterInvoker {
@@ -71,6 +72,7 @@ public class FailoverClusterInvoker implements ClusterInvoker {
 
     @Override
     public <T> InvokeFuture<T> invoke(JRequest request, Class<T> returnType) throws Exception {
+        // 看成一个普通的 CompletableFuture
         FailoverInvokeFuture<T> future = FailoverInvokeFuture.with(returnType);
 
         int tryCount = retries + 1;
@@ -87,6 +89,7 @@ public class FailoverClusterInvoker implements ClusterInvoker {
 
         if (tryCount > 0) {
             final InvokeFuture<T> future = dispatcher.dispatch(request, returnType);
+            // 设置提前设置了 future结束时的方法逻辑
             future.whenComplete((result, throwable) -> {
                 if (throwable == null) {
                     failOverFuture.complete(result);
@@ -113,6 +116,7 @@ public class FailoverClusterInvoker implements ClusterInvoker {
                 }
             });
         } else {
+            // 以异常方式触发
             failOverFuture.completeExceptionally(lastCause);
         }
     }

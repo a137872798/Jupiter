@@ -37,6 +37,7 @@ import org.jupiter.transport.processor.ConsumerProcessor;
  * jupiter
  * org.jupiter.transport.netty.handler.connector
  *
+ * 消费段处理器 默认只会收到 数据 acceptor对应provider connector对应consumer
  * @author jiachun.fjc
  */
 @ChannelHandler.Sharable
@@ -44,6 +45,9 @@ public class ConnectorHandler extends ChannelInboundHandlerAdapter {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(ConnectorHandler.class);
 
+    /**
+     * 消费端处理器
+     */
     private ConsumerProcessor processor;
 
     @Override

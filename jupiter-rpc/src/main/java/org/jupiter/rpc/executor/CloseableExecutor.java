@@ -19,6 +19,7 @@ package org.jupiter.rpc.executor;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 可关闭的线程池
  * @author jiachun.fjc
  */
 public interface CloseableExecutor {

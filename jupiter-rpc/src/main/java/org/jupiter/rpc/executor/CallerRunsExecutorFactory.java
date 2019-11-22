@@ -20,7 +20,7 @@ import org.jupiter.common.util.SpiMetadata;
 /**
  * jupiter
  * org.jupiter.rpc.executor
- *
+ * 代表不使用额外的线程池  而是在 当前线程执行  （可能就是I/O 线程）
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "callerRuns")

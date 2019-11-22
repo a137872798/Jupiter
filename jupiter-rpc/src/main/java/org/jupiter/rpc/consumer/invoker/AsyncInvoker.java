@@ -51,14 +51,18 @@ public class AsyncInvoker extends AbstractInvoker {
         super(appName, metadata, dispatcher, defaultStrategy, methodSpecialConfigs);
     }
 
-    @RuntimeType
+    @RuntimeType // @RuntimeType 提示byteBuddy 禁用严格的类型检查
+                 // @AllArguments 绑定所有参数
+                 // @Origin 未知
     public Object invoke(@Origin Method method, @AllArguments @RuntimeType Object[] args) throws Throwable {
         Class<?> returnType = method.getReturnType();
 
         Object result = doInvoke(method.getName(), args, returnType, false);
 
+        // 将future 对象设置到上下文中
         InvokeFutureContext.set((InvokeFuture<?>) result);
 
+        // 直接返回默认值  为什么要这样设计???
         return Reflects.getTypeDefaultValue(returnType);
     }
 }

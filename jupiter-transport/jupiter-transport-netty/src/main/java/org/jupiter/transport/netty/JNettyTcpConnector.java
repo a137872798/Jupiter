@@ -102,11 +102,12 @@ import org.jupiter.transport.processor.ConsumerProcessor;
  * jupiter
  * org.jupiter.transport.netty
  *
+ * 消费者客户端
  * @author jiachun.fjc
  */
 public class JNettyTcpConnector extends NettyTcpConnector {
 
-    // handlers
+    // 发送心跳对象
     private final ConnectorIdleStateTrigger idleStateTrigger = new ConnectorIdleStateTrigger();
     private final ChannelOutboundHandler encoder =
             CodecConfig.isCodecLowCopy() ? new LowCopyProtocolEncoder() : new ProtocolEncoder();
@@ -148,6 +149,7 @@ public class JNettyTcpConnector extends NettyTcpConnector {
 
         final Bootstrap boot = bootstrap();
         final SocketAddress socketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
+        // 在channelGroup 中首次初始化 针对某个addr的channel组
         final JChannelGroup group = group(address);
 
         // 重连watchdog
@@ -157,11 +159,16 @@ public class JNettyTcpConnector extends NettyTcpConnector {
             public ChannelHandler[] handlers() {
                 return new ChannelHandler[] {
                         new FlushConsolidationHandler(JConstants.EXPLICIT_FLUSH_AFTER_FLUSHES, true),
+                        // 重连狗
                         this,
+                        // 空闲检测
                         new IdleStateChecker(timer, 0, JConstants.WRITER_IDLE_TIME_SECONDS, 0),
+                        // 发送心跳
                         idleStateTrigger,
+                        // 编解码器
                         CodecConfig.isCodecLowCopy() ? new LowCopyProtocolDecoder() : new ProtocolDecoder(),
                         encoder,
+                        // 业务处理器
                         handler
                 };
             }

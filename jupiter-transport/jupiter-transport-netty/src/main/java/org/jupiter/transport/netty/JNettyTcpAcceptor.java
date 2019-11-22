@@ -87,12 +87,18 @@ import org.jupiter.transport.processor.ProviderProcessor;
  */
 public class JNettyTcpAcceptor extends NettyTcpAcceptor {
 
+    /**
+     * 设置默认端口
+     */
     public static final int DEFAULT_ACCEPTOR_PORT = 18090;
 
     // handlers
     private final AcceptorIdleStateTrigger idleStateTrigger = new AcceptorIdleStateTrigger();
     private final ChannelOutboundHandler encoder =
             CodecConfig.isCodecLowCopy() ? new LowCopyProtocolEncoder() : new ProtocolEncoder();
+    /**
+     * 设置 请求处理器 该对象内部会转发到 ProviderProcessor 上
+     */
     private final AcceptorHandler handler = new AcceptorHandler();
 
     public JNettyTcpAcceptor() {
@@ -157,10 +163,13 @@ public class JNettyTcpAcceptor extends NettyTcpAcceptor {
             protected void initChannel(Channel ch) throws Exception {
                 ch.pipeline().addLast(
                         new FlushConsolidationHandler(JConstants.EXPLICIT_FLUSH_AFTER_FLUSHES, true),
+                        // 空闲检测相关
                         new IdleStateChecker(timer, JConstants.READER_IDLE_TIME_SECONDS, 0, 0),
                         idleStateTrigger,
+                        // 编解码器
                         CodecConfig.isCodecLowCopy() ? new LowCopyProtocolDecoder() : new ProtocolDecoder(),
                         encoder,
+                        // 业务处理器
                         handler);
             }
         });

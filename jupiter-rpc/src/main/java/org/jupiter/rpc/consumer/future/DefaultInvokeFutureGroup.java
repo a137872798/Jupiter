@@ -30,11 +30,14 @@ import org.jupiter.common.util.Requires;
  * org.jupiter.rpc.consumer.future
  *
  * @see InvokeFutureGroup
- *
+ * 一个调用组 针对广播请求
  * @author jiachun.fjc
  */
 public class DefaultInvokeFutureGroup<V> implements InvokeFutureGroup<V> {
 
+    /**
+     * 该组中所有待处理的future
+     */
     private final DefaultInvokeFuture<V>[] futures;
     private volatile CompletableFuture<V>[] cfs;
 
@@ -47,6 +50,10 @@ public class DefaultInvokeFutureGroup<V> implements InvokeFutureGroup<V> {
         this.futures = futures;
     }
 
+    /**
+     * 同组对象 返回的响应结果是相同的
+     * @return
+     */
     @Override
     public Class<V> returnType() {
         return futures[0].returnType();
@@ -57,6 +64,10 @@ public class DefaultInvokeFutureGroup<V> implements InvokeFutureGroup<V> {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 获取本group 中所有future 对象
+     * @return
+     */
     @Override
     public InvokeFuture<V>[] futures() {
         return futures;
@@ -70,6 +81,7 @@ public class DefaultInvokeFutureGroup<V> implements InvokeFutureGroup<V> {
             System.arraycopy(futures, 0, cfs, 0, futures.length);
             this.cfs = cfs;
         }
+        // 写时拷贝
         return this.cfs;
     }
 

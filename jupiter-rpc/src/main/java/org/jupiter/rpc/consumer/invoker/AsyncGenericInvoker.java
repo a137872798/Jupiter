@@ -44,10 +44,15 @@ public class AsyncGenericInvoker extends AbstractInvoker implements GenericInvok
         super(appName, metadata, dispatcher, defaultStrategy, methodSpecialConfigs);
     }
 
+    /**
+     * 实现了 invoke 方法  实际上跟一般的invoke是一样的  不过这里的返回类型执行了Object
+     */
     @Override
     public Object $invoke(String methodName, Object... args) throws Throwable {
+        // 获取future 对象
         Object result = doInvoke(methodName, args, Object.class, false);
 
+        // 将结果设置到context 中
         InvokeFutureContext.set((InvokeFuture<?>) result);
 
         return null;

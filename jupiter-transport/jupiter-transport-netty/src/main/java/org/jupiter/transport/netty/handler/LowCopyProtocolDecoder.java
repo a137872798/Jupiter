@@ -56,6 +56,7 @@ import org.jupiter.transport.payload.JResponsePayload;
  * jupiter
  * org.jupiter.transport.netty.handler
  *
+ * ReplayingDecoder 可以不需要预先读取 buf 中是否有足够的数据 而是直接开始解析 当解析失败时 抛出异常被上层捕获到后会自动重置指针
  * @author jiachun.fjc
  */
 public class LowCopyProtocolDecoder extends ReplayingDecoder<LowCopyProtocolDecoder.State> {
@@ -67,6 +68,7 @@ public class LowCopyProtocolDecoder extends ReplayingDecoder<LowCopyProtocolDeco
      * Cumulate {@link ByteBuf}s by add them to a CompositeByteBuf and so do no memory copy whenever possible.
      * Be aware that CompositeByteBuf use a more complex indexing implementation so depending on your use-case
      * and the decoder implementation this may be slower then just use the {@link #MERGE_CUMULATOR}.
+     * 是否使用压缩
      */
     private static final boolean USE_COMPOSITE_BUF = SystemPropertyUtil.getBoolean("jupiter.io.decoder.composite.buf", false);
 

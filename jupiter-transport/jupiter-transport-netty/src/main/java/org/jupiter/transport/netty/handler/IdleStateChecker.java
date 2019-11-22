@@ -41,7 +41,7 @@ import org.jupiter.common.util.SystemClock;
  *
  * jupiter
  * org.jupiter.transport.netty.handler
- *
+ * 空闲检测  实际上就是定时队列数据结构的取舍 采用 O(logN) 级别还是 O(1) 级别
  * @author jiachun.fjc
  */
 public class IdleStateChecker extends ChannelDuplexHandler {
@@ -213,6 +213,10 @@ public class IdleStateChecker extends ChannelDuplexHandler {
         ctx.write(msg, promise);
     }
 
+    /**
+     * 当创建某个channel 时 开启空闲链路检测
+     * @param ctx
+     */
     private void initialize(ChannelHandlerContext ctx) {
         // Avoid the case where destroy() is called before scheduling timeouts.
         // See: https://github.com/netty/netty/issues/143
@@ -222,10 +226,12 @@ public class IdleStateChecker extends ChannelDuplexHandler {
                 return;
         }
 
+        // 代表进入初始化阶段
         state = 1;
 
         lastReadTime = lastWriteTime = SystemClock.millisClock().now();
         if (readerIdleTimeMillis > 0) {
+            // 注意使用 hashWheel 作为定时器数据结构
             readerIdleTimeout = timer.newTimeout(
                     new ReaderIdleTimeoutTask(ctx),
                     readerIdleTimeMillis, TimeUnit.MILLISECONDS);

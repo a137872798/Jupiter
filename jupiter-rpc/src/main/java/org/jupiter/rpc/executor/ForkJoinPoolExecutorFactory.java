@@ -31,6 +31,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 使用基于forkjoin线程池 不过 forkJoin 本身适合一些可拆分的任务 这样可以充分发挥 分治思想
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "forkJoin")

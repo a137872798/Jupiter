@@ -70,7 +70,7 @@ import org.jupiter.transport.netty.handler.connector.ConnectorIdleStateTrigger;
  *
  * jupiter
  * org.jupiter.registry
- * TODO 先看传输模块 因为 监控中心和注册中心都依赖了该模块
+ * 该对象应该是用来连接注册中心的  也就是每个服务消费者/提供者都应携带一个 DefaultRegistry 然后通过它与 DefaultRegitryServer  (代表注册中心)
  * @author jiachun.fjc
  */
 public final class DefaultRegistry extends NettyTcpConnector {
@@ -85,7 +85,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
     // 没收到对端ack确认, 需要重发的消息
     private final ConcurrentMap<Long, MessageNonAck> messagesNonAck = Maps.newConcurrentMap();
 
-    // handlers
+    // handlers 用于定时发送心跳的handler
     private final ConnectorIdleStateTrigger idleStateTrigger = new ConnectorIdleStateTrigger();
     private final MessageHandler handler = new MessageHandler();
     private final MessageEncoder encoder = new MessageEncoder();
@@ -565,6 +565,9 @@ public final class DefaultRegistry extends NettyTcpConnector {
         }
     }
 
+    /**
+     * 发送未确认ACK 的消息
+     */
     private class AckTimeoutScanner implements Runnable {
 
         @SuppressWarnings("all")

@@ -28,6 +28,7 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  * jupiter
  * org.jupiter.rpc.executor
  *
+ * 使用基于 disruptor 的线程池
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "disruptor")
@@ -37,6 +38,7 @@ public class DisruptorExecutorFactory extends AbstractExecutorFactory {
 
     @Override
     public CloseableExecutor newExecutor(Target target, String name) {
+        // 对象内部封装了 disruptor
         final TaskDispatcher executor = new TaskDispatcher(
                 coreWorkers(target),
                 threadFactory(name),

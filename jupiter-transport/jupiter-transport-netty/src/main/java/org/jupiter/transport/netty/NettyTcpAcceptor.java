@@ -39,17 +39,22 @@ import org.jupiter.transport.JConfigGroup;
  * jupiter
  * org.jupiter.transport.netty
  *
+ * 基于TCP 协议的服务器
  * @author jiachun.fjc
  */
 public abstract class NettyTcpAcceptor extends NettyAcceptor {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NettyTcpAcceptor.class);
 
+    /**
+     * 是否使用本地传输
+     */
     private final boolean isNative; // use native transport
     private final NettyConfig.NettyTcpConfigGroup configGroup = new NettyConfig.NettyTcpConfigGroup();
 
     public NettyTcpAcceptor(int port) {
         super(Protocol.TCP, new InetSocketAddress(port));
+        // 使用TCP 就不是本地传输
         isNative = false;
         init();
     }
@@ -213,6 +218,11 @@ public abstract class NettyTcpAcceptor extends NettyAcceptor {
         start(true);
     }
 
+    /**
+     * 启动服务器
+     * @param sync
+     * @throws InterruptedException
+     */
     @Override
     public void start(boolean sync) throws InterruptedException {
         // wait until the server socket is bind succeed.

@@ -31,6 +31,9 @@ import org.jupiter.rpc.consumer.cluster.FailsafeClusterInvoker;
  */
 public class FailoverInvokeFuture<V> extends CompletableFuture<V> implements InvokeFuture<V> {
 
+    /**
+     * 代表本次请求将会返回的结果类型
+     */
     private final Class<V> returnType;
 
     public static <T> FailoverInvokeFuture<T> with(Class<T> returnType) {

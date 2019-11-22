@@ -29,10 +29,14 @@ import org.jupiter.rpc.consumer.future.InvokeFuture;
  * jupiter
  * org.jupiter.rpc.consumer.cluster
  *
+ * 当处在集群环境时通过该对象来调用服务
  * @author jiachun.fjc
  */
 public class FailfastClusterInvoker implements ClusterInvoker {
 
+    /**
+     * 分发请求对象 内部包含均衡负载逻辑
+     */
     private final Dispatcher dispatcher;
 
     public FailfastClusterInvoker(Dispatcher dispatcher) {
@@ -44,6 +48,14 @@ public class FailfastClusterInvoker implements ClusterInvoker {
         return Strategy.FAIL_FAST;
     }
 
+    /**
+     * 如果调用失败 直接抛出 dispatch的异常
+     * @param request
+     * @param returnType
+     * @param <T>
+     * @return
+     * @throws Exception
+     */
     @Override
     public <T> InvokeFuture<T> invoke(JRequest request, Class<T> returnType) throws Exception {
         return dispatcher.dispatch(request, returnType);

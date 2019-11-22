@@ -40,6 +40,7 @@ import org.jupiter.transport.processor.ProviderProcessor;
  * jupiter
  * org.jupiter.transport.netty.handler.acceptor
  *
+ * 输入流处理器 该handler 是可以共享的
  * @author jiachun.fjc
  */
 @ChannelHandler.Sharable
@@ -47,14 +48,21 @@ public class AcceptorHandler extends ChannelInboundHandlerAdapter {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AcceptorHandler.class);
 
+    /**
+     * 统计channel 总数
+     */
     private static final AtomicInteger channelCounter = new AtomicInteger(0);
 
+    /**
+     * 提供者处理器
+     */
     private ProviderProcessor processor;
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Channel ch = ctx.channel();
 
+        // 代表 provider 只接收请求
         if (msg instanceof JRequestPayload) {
             JChannel jChannel = NettyChannel.attachChannel(ch);
             try {
@@ -69,6 +77,11 @@ public class AcceptorHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
+    /**
+     * 当channel被首次唤醒时 增加被标记的channel 数  因为该 handler 是  Sharable 的所以每个channel都可以触发该方法
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         int count = channelCounter.incrementAndGet();
@@ -91,6 +104,8 @@ public class AcceptorHandler extends ChannelInboundHandlerAdapter {
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
         Channel ch = ctx.channel();
         ChannelConfig config = ch.config();
+
+        // autoRead 在底层会关闭掉 SelectionKey 的监听读事件 也就代表在此期间不消费缓冲区数据
 
         // 高水位线: ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK
         // 低水位线: ChannelOption.WRITE_BUFFER_LOW_WATER_MARK

@@ -23,7 +23,7 @@ import org.jupiter.transport.channel.JChannel;
  *
  * jupiter
  * org.jupiter.rpc.consumer
- *
+ * 拦截器对象 存在前置拦截和后置拦截
  * @author jiachun.fjc
  */
 public interface ConsumerInterceptor {
