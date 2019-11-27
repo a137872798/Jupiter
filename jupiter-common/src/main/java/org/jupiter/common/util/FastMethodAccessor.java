@@ -93,6 +93,14 @@ public abstract class FastMethodAccessor {
      */
     public abstract Object invoke(Object obj, int methodIndex, Object... args);
 
+    /**
+     * 根据方法名找到 本方法对应的下标
+     * @param obj
+     * @param methodName
+     * @param parameterTypes
+     * @param args
+     * @return
+     */
     public Object invoke(Object obj, String methodName, Class<?>[] parameterTypes, Object... args) {
         return invoke(obj, getIndex(methodName, parameterTypes), args);
     }

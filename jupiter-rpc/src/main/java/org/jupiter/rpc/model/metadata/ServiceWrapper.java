@@ -111,6 +111,11 @@ public class ServiceWrapper implements Serializable {
         this.flowController = flowController;
     }
 
+    /**
+     * 获取方法必备的信息 如果找不到会抛出 NoSuchMethod 异常
+     * @param methodName
+     * @return
+     */
     public List<Pair<Class<?>[], Class<?>[]>> getMethodExtension(String methodName) {
         return extensions.get(methodName);
     }

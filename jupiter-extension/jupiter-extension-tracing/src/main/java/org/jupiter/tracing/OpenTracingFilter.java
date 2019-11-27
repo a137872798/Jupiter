@@ -43,12 +43,17 @@ import org.jupiter.rpc.model.metadata.MessageWrapper;
  *
  * jupiter
  * org.jupiter.tracing
+ * 借助第三方链路追踪框架 先不看了
  *
  * @author jiachun.fjc
  */
 @SpiMetadata(name = "openTracing", priority = 10)
 public class OpenTracingFilter implements JFilter {
 
+    /**
+     * 代表 consumer/provider在处理请求时都会经过该过滤器
+     * @return
+     */
     @Override
     public Type getType() {
         return Type.ALL;

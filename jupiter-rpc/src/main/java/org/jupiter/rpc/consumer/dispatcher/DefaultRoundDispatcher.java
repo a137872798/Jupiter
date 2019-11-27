@@ -42,6 +42,13 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
         super(client, loadBalancer, serializerType);
     }
 
+    /**
+     * consumer 动态代理对象执行doInvoker时 会根据 之前设置的集群容错方式找到对应的dispatcher
+     * @param request
+     * @param returnType
+     * @param <T>
+     * @return
+     */
     @Override
     public <T> InvokeFuture<T> dispatch(JRequest request, Class<T> returnType) {
         // stack copy

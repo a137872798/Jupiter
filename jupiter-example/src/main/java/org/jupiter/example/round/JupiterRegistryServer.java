@@ -30,8 +30,10 @@ public class JupiterRegistryServer {
         RegistryServer registryServer = RegistryServer.Default.createRegistryServer(20001, 1);      // 注册中心
         MonitorServer monitor = new MonitorServer(19998);                                           // 监控服务
         try {
+            // 开启监控中心
             monitor.setRegistryMonitor(registryServer);
             monitor.start();
+            // 开启注册中心
             registryServer.startRegistryServer();
         } catch (InterruptedException e) {
             e.printStackTrace();

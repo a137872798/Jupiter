@@ -79,7 +79,7 @@ public abstract class AbstractInvoker {
         // 找到方法名对应的集群调用对象
         ClusterInvoker invoker = clusterStrategyBridging.findClusterInvoker(methodName);
 
-        // 初始化上下文对象 并通过该对象来获取结果
+        // 通过过滤链模式 灵活插拔功能
         Context invokeCtx = new Context(invoker, returnType, sync);
         Chains.invoke(request, invokeCtx);
 
@@ -134,10 +134,6 @@ public abstract class AbstractInvoker {
             this.sync = sync;
         }
 
-        /**
-         * 这里默认就是 消费者的过滤器
-         * @return
-         */
         @Override
         public JFilter.Type getType() {
             return JFilter.Type.CONSUMER;
@@ -165,7 +161,8 @@ public abstract class AbstractInvoker {
     }
 
     /**
-     *
+     * 消费端过滤器 当consumer 需要调用某个服务时 通过该过滤器实现（集群-均衡负载）调用
+     * 将整个集群调用 通过过滤器的模式实现灵活插拔
      */
     static class ClusterInvokeFilter implements JFilter {
 
@@ -183,10 +180,11 @@ public abstract class AbstractInvoker {
             // invoke
             InvokeFuture<?> future = invoker.invoke(request, returnType);
 
-            // 异步调用的话返回 future 由业务端自己调用get
+            // 同步调用的话阻塞等待结果设置
             if (invokeCtx.isSync()) {
                 invokeCtx.setResult(future.getResult());
             } else {
+                // 将future对象设置到上下文中
                 invokeCtx.setResult(future);
             }
         }

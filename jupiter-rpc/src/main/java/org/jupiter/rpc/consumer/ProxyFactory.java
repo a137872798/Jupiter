@@ -90,6 +90,12 @@ public class ProxyFactory<I> {
     // failover重试次数
     private int retries = 2;
 
+    /**
+     * 传入接口类型 并生成动态代理对象 隐藏RPC通信细节
+     * @param interfaceClass
+     * @param <I>
+     * @return
+     */
     public static <I> ProxyFactory<I> factory(Class<I> interfaceClass) {
         ProxyFactory<I> factory = new ProxyFactory<>(interfaceClass);
         // 初始化数据
@@ -195,12 +201,17 @@ public class ProxyFactory<I> {
         return this;
     }
 
+    /**
+     * 开始生成代理对象
+     * @return
+     */
     public I newProxyInstance() {
         // check arguments
         Requires.requireNotNull(interfaceClass, "interfaceClass");
 
         ServiceProvider annotation = interfaceClass.getAnnotation(ServiceProvider.class);
 
+        // 从注解中获取需要补充的信息
         if (annotation != null) {
             Requires.requireTrue(
                     group == null,
@@ -221,42 +232,50 @@ public class ProxyFactory<I> {
         Requires.requireNotNull(client, "client");
         Requires.requireNotNull(serializerType, "serializerType");
 
+        // 获取调用模式 以及分发模式 广播模式下不支持同步调用
         if (dispatchType == DispatchType.BROADCAST && invokeType == InvokeType.SYNC) {
             throw reject("broadcast & sync unsupported");
         }
 
-        // metadata
+        // metadata  生成服务元数据
         ServiceMetadata metadata = new ServiceMetadata(
                 group,
                 providerName,
                 Strings.isNotBlank(version) ? version : JConstants.DEFAULT_VERSION
         );
 
+        // 获取consumer 与 provider 通信的对象
         JConnector<JConnection> connector = client.connector();
+        // 这里是从外部直接指定地址 不过一般是从注册中心自动发现的
         for (UnresolvedAddress address : addresses) {
             connector.addChannelGroup(metadata, connector.group(address));
         }
 
-        // dispatcher
+        // dispatcher  获取请求分发对象 并设置拦截器
         Dispatcher dispatcher = dispatcher()
                 .interceptors(interceptors)
                 .timeoutMillis(timeoutMillis)
                 .methodSpecialConfigs(methodSpecialConfigs);
 
+        // 指定的集群容错策略
         ClusterStrategyConfig strategyConfig = ClusterStrategyConfig.of(strategy, retries);
         Object handler;
+        // invoker 对象内部 包含了 分发请求 集群容错等
         switch (invokeType) {
             case SYNC:
             case AUTO:
+                // 同步 或者自动调用都是生成该对象
                 handler = new AutoInvoker(client.appName(), metadata, dispatcher, strategyConfig, methodSpecialConfigs);
                 break;
             case ASYNC:
+                // 异步调用
                 handler = new AsyncInvoker(client.appName(), metadata, dispatcher, strategyConfig, methodSpecialConfigs);
                 break;
             default:
                 throw reject("invokeType: " + invokeType);
         }
 
+        // 通过bytebuddy 生成动态代理对象 (基于接口)
         return Proxies.getDefault().newProxy(interfaceClass, handler);
     }
 

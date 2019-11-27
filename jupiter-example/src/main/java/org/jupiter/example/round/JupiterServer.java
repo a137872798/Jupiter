@@ -41,6 +41,7 @@ public class JupiterServer {
     public static void main(String[] args) {
         JServer server = new DefaultServer().withAcceptor(new JNettyTcpAcceptor(18090));
         try {
+            // 将提供者信息包装成后 保存到 container中 这样当接收consumer的请求时 就可以通过service信息匹配对应的 serviceWrapper
             ServiceWrapper provider1 = server.serviceRegistry()
                     .provider(new UserServiceImpl())
                     .register();
@@ -49,8 +50,11 @@ public class JupiterServer {
                     .provider(new AsyncUserServiceImpl())
                     .register();
 
+            // 连接到注册中心 此时还没有发布服务到注册中心上
             server.connectToRegistryServer("127.0.0.1:20001");
+            // 开始发布服务  服务下线是怎么通知到注册中心的???
             server.publish(provider1, provider2);
+            // 启动服务提供者
             server.start();
         } catch (InterruptedException e) {
             e.printStackTrace();

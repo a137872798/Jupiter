@@ -102,6 +102,7 @@ public abstract class ConnectionWatchdog extends ChannelInboundHandlerAdapter im
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel ch = ctx.channel();
 
+        // 当连接成功时 将连接存入到连接组中
         if (group != null) {
             group.add(NettyChannel.attachChannel(ch));
         }

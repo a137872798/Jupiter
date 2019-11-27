@@ -34,7 +34,6 @@ import org.jupiter.transport.payload.JResponsePayload;
  * jupiter
  * org.jupiter.rpc.consumer.processor.task
  *
- * 看来是用来做编解码的 比如不想将耗时的编解码操作放到netty I/O 线程 那么就通过该线程池进行编解码
  * @author jiachun.fjc
  */
 public class MessageTask implements Runnable {
@@ -55,6 +54,10 @@ public class MessageTask implements Runnable {
         this.response = response;
     }
 
+    /**
+     * 当接收到 provider生成的结果后返回 如果对应方法是future 那么provider会在结果生成时才将数据写回到consumer
+     * 即使设置超时也没关系 只要在 provider端future完成时设置一个写入结果的方法
+     */
     @Override
     public void run() {
         // stack copy

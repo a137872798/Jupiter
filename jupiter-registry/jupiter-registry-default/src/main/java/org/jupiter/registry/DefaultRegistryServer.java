@@ -228,6 +228,7 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
         synchronized (registerInfoContext.publishLock(config)) {
             // putIfAbsent和config.newVersion()需要是原子操作, 所以这里加锁
             if (config.getConfig().putIfAbsent(meta.getAddress(), meta) == null) {
+                // 代表某台机器对应的ip地址上增加了一个服务提供者
                 registerInfoContext.getServiceMeta(meta.getAddress()).add(serviceMeta);
 
                 final Message msg = new Message(serializerType.value());
@@ -235,7 +236,10 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
                 msg.version(config.newVersion()); // 版本号+1
                 msg.data(Pair.of(serviceMeta, meta));
 
+                // 往所有订阅者发送数据 通知某个服务上线了  第二个参数 代表一个匹配 也就是能发送的channel 前提是订阅了这个服务
                 subscriberChannels.writeAndFlush(msg, ch -> {
+
+                    // 判断该channel 上是否绑定了对应的服务提供者
                     boolean doSend = isChannelSubscribeOnServiceMeta(serviceMeta, ch);
                     if (doSend) {
                         MessageNonAck msgNonAck = new MessageNonAck(serviceMeta, msg, ch);
@@ -294,17 +298,22 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
 
         attachSubscribeEventOnChannel(serviceMeta, channel);
 
+        // 将待通知channel 添加到容器中  该容器 对象可以通过一个match函数查询对应的channel 比如某个服务上线了就可以通过channel上是否绑定了  订阅该服务的信息来过滤
         subscriberChannels.add(channel);
 
+        // 返回能提供该服务的 所有提供者地址 以及 对应的注册元数据
         ConfigWithVersion<ConcurrentMap<RegisterMeta.Address, RegisterMeta>> config =
                 registerInfoContext.getRegisterMeta(serviceMeta);
+        // 代表当前还没有注册 那么本次处理已经完成了之后 当某个服务注册的时候 还会从 subscriberChannels 中触发监听器
         if (config.getConfig().isEmpty()) {
             return;
         }
 
+        // 如果当前服务已经注册那么就返回给consumer
         final Message msg = new Message(serializerType.value());
         msg.messageCode(JProtocolHeader.PUBLISH_SERVICE);
         msg.version(config.getVersion()); // 版本号
+        // registerMeta 内部也有地址信息 这样方便consumer 连接
         List<RegisterMeta> registerMetaList = Lists.newArrayList(config.getConfig().values());
         // 每次发布服务都是当前meta的全量信息
         msg.data(Pair.of(serviceMeta, registerMetaList));
@@ -541,6 +550,9 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
         }
     }
 
+    /**
+     * 注册中心端的消息处理
+     */
     @ChannelHandler.Sharable
     class MessageHandler extends ChannelInboundHandlerAdapter {
 
@@ -552,8 +564,10 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
                 Message obj = (Message) msg;
 
                 switch (obj.messageCode()) {
+                    // 发布服务 或者取消发布某个服务
                     case JProtocolHeader.PUBLISH_SERVICE:
                     case JProtocolHeader.PUBLISH_CANCEL_SERVICE:
+                        // 获取本次服务的注册元数据
                         RegisterMeta meta = (RegisterMeta) obj.data();
                         if (Strings.isNullOrEmpty(meta.getHost())) {
                             SocketAddress address = ch.remoteAddress();
@@ -571,10 +585,12 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
                         } else if (obj.messageCode() == JProtocolHeader.PUBLISH_CANCEL_SERVICE) {
                             handlePublishCancel(meta, ch);
                         }
+                        // 返回确认消息
                         ch.writeAndFlush(new Acknowledge(obj.sequence())) // 回复ACK
                                 .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
                         break;
+                        // 某个channel 对某个服务进行订阅
                     case JProtocolHeader.SUBSCRIBE_SERVICE:
                         handleSubscribe((RegisterMeta.ServiceMeta) obj.data(), ch);
                         ch.writeAndFlush(new Acknowledge(obj.sequence())) // 回复ACK
@@ -586,6 +602,7 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
 
                         break;
                 }
+                // 代表针对某次请求的响应消息
             } else if (msg instanceof Acknowledge) {
                 handleAcknowledge((Acknowledge) msg, ch);
             } else {
@@ -595,11 +612,16 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
             }
         }
 
+        /**
+         * 当channel 失活时
+         * @param ctx
+         * @throws Exception
+         */
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
             Channel ch = ctx.channel();
 
-            // 取消之前发布的所有服务
+            // 取消之前发布的所有服务  难怪要在channel上保存发布的服务 就是为了在某服务断开连接时自动下线
             ConcurrentSet<RegisterMeta> registerMetaSet = ch.attr(S_PUBLISH_KEY).get();
 
             if (registerMetaSet == null || registerMetaSet.isEmpty()) {
@@ -611,6 +633,7 @@ public final class DefaultRegistryServer extends NettyTcpAcceptor implements Reg
                 if (address == null) {
                     address = meta.getAddress();
                 }
+                // 取消注册
                 handlePublishCancel(meta, ch);
             }
 

@@ -27,7 +27,6 @@ import org.jupiter.common.util.internal.logging.InternalLoggerFactory;
  *
  * jupiter
  * org.jupiter.transport
- * 类似于连接池???
  * @author jiachun.fjc
  */
 public class JConnectionManager {

@@ -46,14 +46,19 @@ public class DefaultConsumerProcessor implements ConsumerProcessor {
         this.executor = executor;
     }
 
+    /**
+     * 处理从provider上接收到的消息体
+     * @param channel
+     * @param responsePayload
+     * @throws Exception
+     */
     @Override
     public void handleResponse(JChannel channel, JResponsePayload responsePayload) throws Exception {
         MessageTask task = new MessageTask(channel, new JResponse(responsePayload));
+        // 使用额外线程池/netty的IO线程池处理任务
         if (executor == null) {
-            // 通过 netty I/O 线程进行编解码
             channel.addTask(task);
         } else {
-            // 放到额外的线程池进行编解码
             executor.execute(task);
         }
     }

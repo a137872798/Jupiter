@@ -142,6 +142,9 @@ abstract class AbstractDispatcher implements Dispatcher {
         CopyOnWriteGroupList groups = client
                 .connector()
                 .directory(metadata);
+        // 这里有2个均衡负载级别 一个是多个机器提供某个服务  选择合适的机器
+        // 第二个是针对某个机器的多个连接中轮询返回一条连接
+
         // 该group 代表某一provider 节点下的多个channel
         JChannelGroup group = loadBalancer.select(groups, metadata);
 

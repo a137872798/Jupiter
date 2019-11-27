@@ -76,16 +76,20 @@ public abstract class AbstractRegistryService implements RegistryService {
      */
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
+
     private final ConcurrentMap<RegisterMeta.ServiceMeta, RegisterValue> registries =
             Maps.newConcurrentMap();
 
     /**
      * 针对实时性要求不强的监听器 使用 CopyOnWriter 对象
+     * key 代表被订阅的服务 value代表挂载在该服务的监听器
      */
     private final ConcurrentMap<RegisterMeta.ServiceMeta, CopyOnWriteArrayList<NotifyListener>> subscribeListeners =
             Maps.newConcurrentMap();
     private final ConcurrentMap<RegisterMeta.Address, CopyOnWriteArrayList<OfflineListener>> offlineListeners =
             Maps.newConcurrentMap();
+
+    // 与注册中心连接的客户端会缓存一份当前已记录的订阅者和提供者
 
     // Consumer已订阅的信息
     private final ConcurrentSet<RegisterMeta.ServiceMeta> subscribeSet = new ConcurrentSet<>();
@@ -100,7 +104,7 @@ public abstract class AbstractRegistryService implements RegistryService {
                     // 不断从阻塞队列中拉取注册元数据 并填充到registerMetaMap中， 此时的state标记为 prepare 代表注册还未完成
                     meta = queue.take();
                     registerMetaMap.put(meta, RegisterState.PREPARE);
-                    // 针对元数据做真正的注册行为
+                    // 针对元数据做真正的注册行为  这里需要与 registerServer 做交互
                     doRegister(meta);
                 } catch (InterruptedException e) {
                     logger.warn("[register.executor] interrupted.");
@@ -262,7 +266,7 @@ public abstract class AbstractRegistryService implements RegistryService {
     public abstract void destroy();
 
     /**
-     * 添加某一地址 有关下线的监听器
+     * 添加某一地址 有关下线的监听器 一般是consumer 添加到某个服务地址的
      * @param address
      * @param listener
      */
@@ -319,7 +323,7 @@ public abstract class AbstractRegistryService implements RegistryService {
             // 获取当前版本号
             long lastVersion = value.version;
             if (version > lastVersion
-                    // 代表版本号越界 不过都代表 本次传入的version 更大 如果version 变小 应该就忽略本次请求
+                    // 代表版本号越界 不过都代表本次传入的version更大 如果version变小应该就忽略本次请求
                     || (version < 0 && lastVersion > 0 /* version overflow */)) {
                 // 根据事件类型 移除对应的 服务提供信息
                 if (event == NotifyListener.NotifyEvent.CHILD_REMOVED) {
@@ -329,6 +333,7 @@ public abstract class AbstractRegistryService implements RegistryService {
                 } else if (event == NotifyListener.NotifyEvent.CHILD_ADDED) {
                     Collections.addAll(value.metaSet, array);
                 }
+                // 更新当前服务版本
                 value.version = version;
                 notifyNeeded = true;
             }
@@ -365,6 +370,9 @@ public abstract class AbstractRegistryService implements RegistryService {
         return registerMetaMap;
     }
 
+    /**
+     * 记录某一服务所有的变动信息
+     */
     protected static class RegisterValue {
         private long version = Long.MIN_VALUE;
         private final Set<RegisterMeta> metaSet = new HashSet<>();

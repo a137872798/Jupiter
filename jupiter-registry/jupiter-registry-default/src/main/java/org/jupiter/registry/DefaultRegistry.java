@@ -70,7 +70,7 @@ import org.jupiter.transport.netty.handler.connector.ConnectorIdleStateTrigger;
  *
  * jupiter
  * org.jupiter.registry
- * 该对象应该是用来连接注册中心的  也就是每个服务消费者/提供者都应携带一个 DefaultRegistry 然后通过它与 DefaultRegitryServer  (代表注册中心)
+ * 该对象应该是用来连接注册中心的  也就是每个提供者 消费者 所在的机器都应携带一(多)个 DefaultRegistry 然后通过它与 DefaultRegitryServer  (代表注册中心)
  * @author jiachun.fjc
  */
 public final class DefaultRegistry extends NettyTcpConnector {
@@ -113,6 +113,9 @@ public final class DefaultRegistry extends NettyTcpConnector {
         this.registryService = Requires.requireNotNull(registryService, "registryService");
     }
 
+    /**
+     * 当触发 父类 init时 会转发到该方法
+     */
     @Override
     protected void doInit() {
         // child options
@@ -132,18 +135,22 @@ public final class DefaultRegistry extends NettyTcpConnector {
         final Bootstrap boot = bootstrap();
         final SocketAddress socketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
 
-        // 重连watchdog
+        // 重连狗  这里没有传入 group 作为参数
         final ConnectionWatchdog watchdog = new ConnectionWatchdog(boot, timer, socketAddress, null) {
 
             @Override
             public ChannelHandler[] handlers() {
                 return new ChannelHandler[] {
+                        // 重连狗自身会存入到下次新建的连接中
                         this,
+                        // 空闲检测对象  在一定时间后没有发生新的读/写事件 会触发下面的 idle事件
                         new IdleStateChecker(timer, 0, JConstants.WRITER_IDLE_TIME_SECONDS, 0),
+                        // 也就是 依赖注册中心的客户端 (包括消费者和提供者) 都会主动上报心跳到注册中心 这样就减少了注册中心本身的心跳负荷
                         idleStateTrigger,
                         new MessageDecoder(),
                         encoder,
                         ackEncoder,
+                        // 处理注册中心发出的数据
                         handler
                 };
             }
@@ -170,11 +177,13 @@ public final class DefaultRegistry extends NettyTcpConnector {
             throw new ConnectFailedException("connects to [" + address + "] fails", t);
         }
 
+        // 返回包装后的 JConnection 对象
         return new JConnection(address) {
 
             @Override
             public void setReconnect(boolean reconnect) {
                 if (reconnect) {
+                    // 该对象启动后在检测到 inactive 后会开启一个定时任务 用于重建连接
                     watchdog.start();
                 } else {
                     watchdog.stop();
@@ -185,6 +194,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
     /**
      * Sent the subscription information to registry server.
+     * 将订阅信息传到注册中心
      */
     public void doSubscribe(RegisterMeta.ServiceMeta serviceMeta) {
         Message msg = new Message(serializerType.value());
@@ -204,14 +214,16 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
     /**
      * Publishing service to registry server.
+     * 发送注册请求到注册中心
      */
     public void doRegister(RegisterMeta meta) {
+        // 使用指定的序列化方式
         Message msg = new Message(serializerType.value());
         msg.messageCode(JProtocolHeader.PUBLISH_SERVICE);
         msg.data(meta);
 
         Channel ch = channel;
-        // 与MessageHandler#channelActive()中的write有竞争
+        // 与MessageHandler#channelActive()中的write有竞争 那里可能也在发起重新注册 这样只有绑定成功的才能写入
         if (attachPublishEventOnChannel(meta, ch)) {
             ch.writeAndFlush(msg)
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
@@ -358,6 +370,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
                             break;
                         }
+                        // 如果是针对某次请求的响应消息
                         case JProtocolHeader.ACK:
                             out.add(new Acknowledge(header.id()));
 
@@ -425,6 +438,9 @@ public final class DefaultRegistry extends NettyTcpConnector {
         }
     }
 
+    /**
+     * 处理注册中心返回的消息
+     */
     @ChannelHandler.Sharable
     class MessageHandler extends ChannelInboundHandlerAdapter {
 
@@ -437,10 +453,12 @@ public final class DefaultRegistry extends NettyTcpConnector {
                 Message obj = (Message) msg;
 
                 switch (obj.messageCode()) {
+                    // 如果是通知某个服务上线  在提供者将服务注册到注册中心后 注册中心会通过订阅者的channel 将服务信息发送给消费者
                     case JProtocolHeader.PUBLISH_SERVICE: {
                         Pair<RegisterMeta.ServiceMeta, ?> data = (Pair<RegisterMeta.ServiceMeta, ?>) obj.data();
                         Object metaObj = data.getSecond();
 
+                        // 当consumer 首次订阅时 如果当前注册中心已经有一组提供者了 会返回一组RegisterMeta
                         if (metaObj instanceof List) {
                             List<RegisterMeta> list = (List<RegisterMeta>) metaObj;
                             RegisterMeta[] array = new RegisterMeta[list.size()];
@@ -451,7 +469,9 @@ public final class DefaultRegistry extends NettyTcpConnector {
                                     obj.version(),
                                     array
                             );
+                        // 处理注册数据
                         } else if (metaObj instanceof RegisterMeta) {
+                            // 通过与consumer交互的桥梁 发起通知
                             registryService.notify(
                                     data.getFirst(),
                                     NotifyListener.NotifyEvent.CHILD_ADDED,
@@ -468,6 +488,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
                         break;
                     }
+                    // 当某个服务下线的时候触发  服务下线就对应Child_Removed
                     case JProtocolHeader.PUBLISH_CANCEL_SERVICE: {
                         Pair<RegisterMeta.ServiceMeta, RegisterMeta> data =
                                 (Pair<RegisterMeta.ServiceMeta, RegisterMeta>) obj.data();
@@ -482,6 +503,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
                         break;
                     }
+                    // 如果某个服务 断开连接会线触发PUBLISH_CANCEL_SERVICE 然后触发下线通知
                     case JProtocolHeader.OFFLINE_NOTICE:
                         RegisterMeta.Address address = (RegisterMeta.Address) obj.data();
 
@@ -491,6 +513,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
                         break;
                 }
+                // 代表针对某次请求的响应消息 从 NoAck池中移除对应数据
             } else if (msg instanceof Acknowledge) {
                 handleAcknowledge((Acknowledge) msg);
             } else {
@@ -500,6 +523,11 @@ public final class DefaultRegistry extends NettyTcpConnector {
             }
         }
 
+        /**
+         * 当 channel 首次激活时 (可能是channel重建的情况)
+         * @param ctx
+         * @throws Exception
+         */
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             Channel ch = (channel = ctx.channel());
@@ -511,13 +539,16 @@ public final class DefaultRegistry extends NettyTcpConnector {
                     continue;
                 }
 
+                // 重新发出订阅请求
                 Message msg = new Message(serializerType.value());
                 msg.messageCode(JProtocolHeader.SUBSCRIBE_SERVICE);
                 msg.data(serviceMeta);
 
                 ch.writeAndFlush(msg)
+                        // 该监听器 会将异常通过channel 传递下去
                         .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
+                // 设置到 响应池中 当请求在指定时间内没有返回则设置超时异常
                 MessageNonAck msgNonAck = new MessageNonAck(msg);
                 messagesNonAck.put(msgNonAck.id, msgNonAck);
             }
@@ -541,6 +572,12 @@ public final class DefaultRegistry extends NettyTcpConnector {
             }
         }
 
+        /**
+         * 异常会传递到这里
+         * @param ctx
+         * @param cause
+         * @throws Exception
+         */
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             Channel ch = ctx.channel();
@@ -585,6 +622,7 @@ public final class DefaultRegistry extends NettyTcpConnector {
 
                             MessageNonAck msgNonAck = new MessageNonAck(m.msg);
                             messagesNonAck.put(msgNonAck.id, msgNonAck);
+                            // 这里采用定时重发  在注册提供者/消费者这个场景不适合做超时异常 而是采用重试机制更合理
                             channel.writeAndFlush(m.msg)
                                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
                         }

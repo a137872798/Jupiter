@@ -85,6 +85,9 @@ public abstract class NettyConnector implements JConnector<JConnection> {
         this.nWorkers = nWorkers;
     }
 
+    /**
+     * 初始化 客户端相关配置
+     */
     protected void init() {
         ThreadFactory workerFactory = workerThreadFactory("jupiter.connector");
         worker = initEventLoopGroup(nWorkers, workerFactory);
@@ -168,6 +171,11 @@ public abstract class NettyConnector implements JConnector<JConnection> {
         return directoryGroup.find(directory);
     }
 
+    /**
+     * 判断某个地址是否可用 就是检测针对某个 服务是否有可用的连接
+     * @param directory
+     * @return
+     */
     @Override
     public boolean isDirectoryAvailable(Directory directory) {
         CopyOnWriteGroupList groups = directory(directory);

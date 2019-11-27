@@ -47,7 +47,7 @@ import org.jupiter.transport.channel.JChannelGroup;
  * jupiter
  * org.jupiter.transport.netty.channel
  *
- * 连接组对象
+ * 连接组对象  consumer连接到provider 不可能只用一个连接 因为在高并发场景 一条连接很可能性能不足
  * @author jiachun.fjc
  */
 public class NettyChannelGroup implements JChannelGroup {
@@ -83,7 +83,7 @@ public class NettyChannelGroup implements JChannelGroup {
     private final IntSequence sequence = new IntSequence(DEFAULT_SEQUENCE_STEP);
 
     /**
-     * 这里key 应该是服务三元组  value 是 权重
+     * 这里key 应该是服务三元组  value 是 权重   看来在集群环境下调用跟权重有关
      */
     private final ConcurrentMap<String, Integer> weights = Maps.newConcurrentMap();
 
@@ -263,6 +263,10 @@ public class NettyChannelGroup implements JChannelGroup {
         return available;
     }
 
+    /**
+     * 设置回调对象
+     * @param listener
+     */
     @Override
     public void onAvailable(Runnable listener) {
         waitAvailableListeners.add(listener);

@@ -47,6 +47,13 @@ public class AutoInvoker extends AbstractInvoker {
         super(appName, metadata, dispatcher, defaultStrategy, methodSpecialConfigs);
     }
 
+    /**
+     * 同步调用/自动调用
+     * @param method
+     * @param args
+     * @return
+     * @throws Throwable
+     */
     @SuppressWarnings("unchecked")
     @RuntimeType
     public Object invoke(@Origin Method method, @AllArguments @RuntimeType Object[] args) throws Throwable {
@@ -65,7 +72,7 @@ public class AutoInvoker extends AbstractInvoker {
             return inf;
         }
 
-        // 当future 对象执行完成后设置结果
+        // 新建一个future对象并返回  当future 对象执行完成后设置结果
         final CompletableFuture<Object> cf = newFuture((Class<CompletableFuture>) returnType);
         inf.whenComplete((result, throwable) -> {
             //

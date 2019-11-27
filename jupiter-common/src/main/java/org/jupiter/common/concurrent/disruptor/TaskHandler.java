@@ -36,7 +36,7 @@ public class TaskHandler implements
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(TaskHandler.class);
 
-    // 接收到任务后直接执行 .run() 就可以
+    // 接收到任务后直接执行 .run() 就可以  也就是执行逻辑本封装在了task本身
     @Override
     public void onEvent(MessageEvent<Runnable> event, long sequence, boolean endOfBatch) throws Exception {
         event.getMessage().run();

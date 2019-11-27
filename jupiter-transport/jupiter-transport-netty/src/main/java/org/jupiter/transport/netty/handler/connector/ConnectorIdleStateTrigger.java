@@ -36,6 +36,7 @@ public class ConnectorIdleStateTrigger extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             IdleState state = ((IdleStateEvent) evt).state();
+            // 代表一段时间没有写数据到对端 强制发送一个心跳包
             if (state == IdleState.WRITER_IDLE) {
                 // write heartbeat to server
                 // 写空闲时 发送心跳包

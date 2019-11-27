@@ -61,14 +61,15 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
     public void handleRequest(JChannel channel, JRequestPayload requestPayload) throws Exception {
         MessageTask task = new MessageTask(this, channel, new JRequest(requestPayload));
         if (executor == null) {
+            // 使用I/O 线程处理
             channel.addTask(task);
         } else {
+            // 一般该对象都会被设置 一种较好的实现是 disruptor
             executor.execute(task);
         }
     }
 
     /**
-     * 处理异常情况 当解析消息时被 限流限制会抛出异常
      * @param channel
      * @param request
      * @param status
@@ -90,6 +91,13 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
         }
     }
 
+    /**
+     * 针对调用provider 本身发出的异常是不需要关闭channel的 (业务异常)
+     * @param channel
+     * @param request
+     * @param status
+     * @param cause
+     */
     public void handleException(JChannel channel, JRequest request, Status status, Throwable cause) {
         logger.error("An exception was caught while processing request: {}, {}.",
                 channel.remoteAddress(), StackTraceUtil.stackTrace(cause));
@@ -98,13 +106,23 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
                 channel, request.invokeId(), request.serializerCode(), status.value(), cause, false);
     }
 
+    /**
+     * 处理请求被拒绝的情况 比如某个请求进来 发现被flowController阻挡了
+     * @param channel
+     * @param request
+     * @param status
+     * @param cause
+     */
     public void handleRejected(JChannel channel, JRequest request, Status status, Throwable cause) {
         if (logger.isWarnEnabled()) {
             logger.warn("Service rejected: {}, {}.", channel.remoteAddress(), StackTraceUtil.stackTrace(cause));
         }
 
         doHandleException(
-                channel, request.invokeId(), request.serializerCode(), status.value(), cause, true);
+                channel, request.invokeId(), request.serializerCode(), // 传入req的序列化方式并以相同方式序列化res对象
+                status.value(), cause,
+                true // 当请求被拒时 选择重新创建channel  这样在均衡负载时就会重新预热 那么被分派的请求也会少
+        );
     }
 
     /**
@@ -127,11 +145,13 @@ public abstract class DefaultProviderProcessor implements ProviderProcessor, Loo
 
         JResponsePayload response = new JResponsePayload(invokeId);
         response.status(status);
+        // 如果只是进行了低拷贝 此时只是做一个较低层的序列化
         if (CodecConfig.isCodecLowCopy()) {
             OutputBuf outputBuf =
                     serializer.writeObject(channel.allocOutputBuf(), result);
             response.outputBuf(s_code, outputBuf);
         } else {
+            // 完整的序列化成比特流
             byte[] bytes = serializer.writeObject(result);
             response.bytes(s_code, bytes);
         }

@@ -55,7 +55,6 @@ public class AdaptiveOutputBufAllocator {
             sizeTable.add(i);
         }
 
-        // 那为什么不一开始就初始化 SIZE_TABLE  ???
         SIZE_TABLE = new int[sizeTable.size()];
         for (int i = 0; i < SIZE_TABLE.length; i++) {
             SIZE_TABLE[i] = sizeTable.get(i);
@@ -64,6 +63,11 @@ public class AdaptiveOutputBufAllocator {
 
     public static final AdaptiveOutputBufAllocator DEFAULT = new AdaptiveOutputBufAllocator();
 
+    /**
+     * 根据需要的大小快速定位到 能分配最合理空间的下标
+     * @param size
+     * @return
+     */
     private static int getSizeTableIndex(final int size) {
         // 二分法
         for (int low = 0, high = SIZE_TABLE.length - 1; ; ) {

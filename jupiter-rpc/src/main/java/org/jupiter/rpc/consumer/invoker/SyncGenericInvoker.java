@@ -28,6 +28,7 @@ import org.jupiter.rpc.model.metadata.ServiceMetadata;
  * jupiter
  * org.jupiter.rpc.consumer.invoker
  *
+ * 从代码来看 泛化调用实际上就是依赖 JLS 匹配
  * @see GenericInvoker
  *
  * @author jiachun.fjc

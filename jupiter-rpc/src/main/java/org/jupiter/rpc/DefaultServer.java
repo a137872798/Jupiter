@@ -82,19 +82,34 @@ public class DefaultServer implements JServer {
         return acceptor;
     }
 
+    /**
+     * acceptor 对象在接收到请求时 会转发到 processor 上
+     * @param acceptor
+     * @return
+     */
     @Override
     public JServer withAcceptor(JAcceptor acceptor) {
         if (acceptor.processor() == null) {
             acceptor.withProcessor(new DefaultProviderProcessor() {
 
+                /**
+                 * 根据本次consumer传入的请求元数据信息来查找对应的服务包装类
+                 * @param directory
+                 * @return
+                 */
                 @Override
                 public ServiceWrapper lookupService(Directory directory) {
                     return providerContainer.lookupService(directory.directoryString());
                 }
 
+                /**
+                 * 当processor 处理请求时 首先会通过该方法进行流量控制
+                 * @param request
+                 * @return
+                 */
                 @Override
                 public ControlResult flowControl(JRequest request) {
-                    // 全局流量控制
+                    // 没有设置的话总是允许  一个比较简单的实现就是依赖 信号量
                     if (globalFlowController == null) {
                         return ControlResult.ALLOWED;
                     }
@@ -111,6 +126,10 @@ public class DefaultServer implements JServer {
         return registryService;
     }
 
+    /**
+     * 通过registryService 将服务提供者信息注册到 注册中心
+     * @param connectString list of servers to connect to [host1:port1,host2:port2....]
+     */
     @Override
     public void connectToRegistryServer(String connectString) {
         registryService.connectToRegistryServer(connectString);
@@ -151,16 +170,22 @@ public class DefaultServer implements JServer {
         return providerContainer.getAllServices();
     }
 
+    /**
+     * 将服务发布到注册中心
+     * @param serviceWrapper
+     */
     @Override
     public void publish(ServiceWrapper serviceWrapper) {
         ServiceMetadata metadata = serviceWrapper.getMetadata();
 
+        // 这里统一了注册中心需要的元数据
         RegisterMeta meta = new RegisterMeta();
         meta.setPort(acceptor.boundPort());
         meta.setGroup(metadata.getGroup());
         meta.setServiceProviderName(metadata.getServiceProviderName());
         meta.setVersion(metadata.getVersion());
         meta.setWeight(serviceWrapper.getWeight());
+        // 这里还指定了连接数
         meta.setConnCount(JConstants.SUGGESTED_CONNECTION_COUNT);
 
         registryService.register(meta);
@@ -245,6 +270,19 @@ public class DefaultServer implements JServer {
         withAcceptor(acceptor);
     }
 
+    /**
+     * 将服务提供者注册到container中
+     * @param group
+     * @param providerName
+     * @param version
+     * @param serviceProvider
+     * @param interceptors
+     * @param extensions
+     * @param weight
+     * @param executor
+     * @param flowController
+     * @return
+     */
     ServiceWrapper registerService(
             String group,
             String providerName,
@@ -258,9 +296,11 @@ public class DefaultServer implements JServer {
 
         ProviderInterceptor[] allInterceptors = null;
         List<ProviderInterceptor> tempList = Lists.newArrayList();
+        // 全局拦截器会设置到所有的提供者中
         if (globalInterceptors != null) {
             Collections.addAll(tempList, globalInterceptors);
         }
+        // 如果该提供者自身设置了拦截器 也进行设置
         if (interceptors != null) {
             Collections.addAll(tempList, interceptors);
         }
@@ -268,9 +308,11 @@ public class DefaultServer implements JServer {
             allInterceptors = tempList.toArray(new ProviderInterceptor[0]);
         }
 
+        // 为什么需要wrapper 这样类似于做一个 泛化 这样无论具体的服务是什么 都可以通过这种方式进行调用
         ServiceWrapper wrapper =
                 new ServiceWrapper(group, providerName, version, serviceProvider, allInterceptors, extensions);
 
+        // 设置权重
         wrapper.setWeight(weight);
         wrapper.setExecutor(executor);
         wrapper.setFlowController(flowController);
@@ -280,14 +322,23 @@ public class DefaultServer implements JServer {
         return wrapper;
     }
 
+    /**
+     * 服务提供者 以及相关信息 该对象会被包装成 ServiceWrapper
+     */
     class DefaultServiceRegistry implements ServiceRegistry {
 
+        /**
+         * 服务提供者对象
+         */
         private Object serviceProvider;                     // 服务对象
         private ProviderInterceptor[] interceptors;         // 拦截器
         private Class<?> interfaceClass;                    // 接口类型
         private String group;                               // 服务组别
         private String providerName;                        // 服务名称
         private String version;                             // 服务版本号, 通常在接口不兼容时版本号才需要升级
+        /**
+         * 服务提供者为什么会需要权重???
+         */
         private int weight;                                 // 权重
         private Executor executor;                          // 该服务私有的线程池
         private FlowController<JRequest> flowController;    // 该服务私有的流量控制器
@@ -341,12 +392,17 @@ public class DefaultServer implements JServer {
             return this;
         }
 
+        /**
+         * 将设置完必要信息的提供者对象注册到本地
+         * @return
+         */
         @Override
         public ServiceWrapper register() {
             Requires.requireNotNull(serviceProvider, "serviceProvider");
 
             Class<?> providerClass = serviceProvider.getClass();
 
+            // 尝试获取服务提供者相关注解
             ServiceProviderImpl implAnnotation = null;
             ServiceProvider ifAnnotation = null;
             for (Class<?> cls = providerClass; cls != Object.class; cls = cls.getSuperclass()) {
@@ -377,6 +433,7 @@ public class DefaultServer implements JServer {
                 }
             }
 
+            // 如果有设置对应的注解 可以从注解中获取需要的属性
             if (ifAnnotation != null) {
                 Requires.requireTrue(
                         group == null,
@@ -389,6 +446,7 @@ public class DefaultServer implements JServer {
 
                 group = ifAnnotation.group();
                 String name = ifAnnotation.name();
+                // 如果指定了服务名 使用name 作为查找服务的依据
                 providerName = Strings.isNotBlank(name) ? name : interfaceClass.getName();
             }
 
@@ -398,6 +456,7 @@ public class DefaultServer implements JServer {
                         providerClass.getName() + " has a @ServiceProviderImpl annotation, can't set [version] again"
                 );
 
+                // 获取版本号信息
                 version = implAnnotation.version();
             }
 
@@ -418,6 +477,7 @@ public class DefaultServer implements JServer {
                 list.add(Pair.of(method.getParameterTypes(), method.getExceptionTypes()));
             }
 
+            // 将服务相关信息注册到 container 中
             return registerService(
                     group,
                     providerName,
@@ -435,7 +495,7 @@ public class DefaultServer implements JServer {
     /**
      * Local service provider container.
      *
-     * 本地provider容器
+     * 本地provider容器  维护本机所有的提供者 这样当consumer传入本次需要的服务信息时 就可以通过下面的方法查找
      */
     interface ServiceProviderContainer {
 
@@ -463,6 +523,9 @@ public class DefaultServer implements JServer {
     // 本地provider容器默认实现
     private static final class DefaultServiceProviderContainer implements ServiceProviderContainer {
 
+        /**
+         * serviceWrapper 内部包含了 provider 对象
+         */
         private final ConcurrentMap<String, ServiceWrapper> serviceProviders = Maps.newConcurrentMap();
 
         @Override

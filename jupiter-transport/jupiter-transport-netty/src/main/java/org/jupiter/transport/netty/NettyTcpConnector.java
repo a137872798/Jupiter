@@ -36,6 +36,7 @@ import org.jupiter.transport.UnresolvedAddress;
  * jupiter
  * org.jupiter.transport.netty
  *
+ * 对应netty的 Bootstrap (客户端)
  * @author jiachun.fjc
  */
 public abstract class NettyTcpConnector extends NettyConnector {
@@ -130,6 +131,11 @@ public abstract class NettyTcpConnector extends NettyConnector {
         }
     }
 
+    /**
+     * 连接到指定地址
+     * @param address
+     * @return
+     */
     @Override
     public JConnection connect(UnresolvedAddress address) {
         return connect(address, false);

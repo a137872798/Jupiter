@@ -54,6 +54,7 @@ public class ConnectorHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Channel ch = ctx.channel();
 
+        // 只允许接收响应结果 封装了本次RPC 调用后的结果对象 可能是一个正常对象也可能是本次调用产生的异常
         if (msg instanceof JResponsePayload) {
             try {
                 processor.handleResponse(NettyChannel.attachChannel(ch), (JResponsePayload) msg);

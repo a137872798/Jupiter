@@ -107,7 +107,8 @@ import org.jupiter.transport.processor.ConsumerProcessor;
  */
 public class JNettyTcpConnector extends NettyTcpConnector {
 
-    // 发送心跳对象
+    // 发送心跳对象  首先 DefaultServer/DefaultClient 都有一个 与注册中心通信的service 对象 他们都会定期往注册中心发送心跳 用于长连接keepAlive
+    // 而在业务级别 消费者会定期向提供者发送心跳包
     private final ConnectorIdleStateTrigger idleStateTrigger = new ConnectorIdleStateTrigger();
     private final ChannelOutboundHandler encoder =
             CodecConfig.isCodecLowCopy() ? new LowCopyProtocolEncoder() : new ProtocolEncoder();
@@ -143,13 +144,19 @@ public class JNettyTcpConnector extends NettyTcpConnector {
         handler.processor(Requires.requireNotNull(processor, "processor"));
     }
 
+    /**
+     * 该方法用于连接到 provider 上
+     * @param address
+     * @param async
+     * @return
+     */
     @Override
     public JConnection connect(UnresolvedAddress address, boolean async) {
         setOptions();
 
         final Bootstrap boot = bootstrap();
         final SocketAddress socketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
-        // 在channelGroup 中首次初始化 针对某个addr的channel组
+        // 在channelGroup 中首次初始化 针对某个addr的channel组  此时内部还没有连接
         final JChannelGroup group = group(address);
 
         // 重连watchdog
